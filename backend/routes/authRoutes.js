@@ -1,3 +1,4 @@
+const User = require("../models/User");
 const express = require("express");
 
 const router = express.Router();
@@ -6,21 +7,41 @@ const router = express.Router();
 const users = [];
 
 // GET - View all users
-router.get("/users", (req, res) => {
-  res.json(users);
+router.get("/users", async (req, res) => {
+  try {
+    const users = await User.find();
+
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      data: users,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 });
 
 // POST - Register a new user
-router.post("/register", (req, res) => {
-  const user = req.body;
+router.post("/register", async (req, res) => {
+  try {
+    const user = new User(req.body);
 
-  users.push(user);
+    await user.save();
 
-  res.json({
-    success: true,
-    message: "User registered successfully!",
-    data: user,
-  });
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully!",
+      data: user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 });
 
 module.exports = router;
