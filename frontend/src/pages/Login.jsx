@@ -1,14 +1,21 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link,useNavigate } from "react-router-dom";
 import GoogleButton from "../components/auth/GoogleButton";
 import PasswordInput from "../components/auth/PasswordInput";
 import TextInput from "../components/auth/TextInput";
+import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e) => {
+  const navigate = useNavigate();
+const { login } = useAuth();
+
+const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
   e.preventDefault();
 
   if (!email || !password) {
@@ -16,8 +23,33 @@ function Login() {
     return;
   }
 
-  console.log("Email:", email);
-  console.log("Password:", password);
+  try {
+    setLoading(true);
+
+    const response = await api.post("/auth/login", {
+      email,
+      password,
+    });
+
+    login(response.data.user, response.data.token);
+
+    const role = response.data.user.role;
+
+    if (role === "admin") {
+      navigate("/admin/dashboard");
+    } else if (role === "worker") {
+      navigate("/worker/dashboard");
+    } else {
+      navigate("/citizen/dashboard");
+    }
+
+  } catch (error) {
+    alert(
+      error.response?.data?.message || "Login failed"
+    );
+  } finally {
+    setLoading(false);
+  }
 };
 
   return (
@@ -77,7 +109,7 @@ function Login() {
             type="submit"
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition"
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
