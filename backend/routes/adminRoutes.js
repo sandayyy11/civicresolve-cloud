@@ -57,5 +57,84 @@ router.post(
     }
   }
 );
+router.patch(
+  "/assign-worker/:issueId",
+  authMiddleware,
+  authorizeRoles("admin"),
+  async (req, res) => {
+    try {
+      const { workerId } = req.body;
+
+      const Issue = require("../models/Issue");
+
+      // Find the worker
+      const worker = await User.findById(workerId);
+
+      if (!worker) {
+        return res.status(404).json({
+          success: false,
+          message: "Worker not found",
+        });
+      }
+
+      // Make sure selected user is actually a worker
+      if (worker.role !== "worker") {
+        return res.status(400).json({
+          success: false,
+          message: "Selected user is not a worker",
+        });
+      }
+
+      // Find issue
+      const issue = await Issue.findById(req.params.issueId);
+
+      if (!issue) {
+        return res.status(404).json({
+          success: false,
+          message: "Issue not found",
+        });
+      }
+
+      // Assign worker
+      issue.assignedTo = worker._id;
+
+      await issue.save();
+
+      res.status(200).json({
+        success: true,
+        message: "Worker assigned successfully",
+        issue,
+      });
+
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+);
+router.get(
+  "/workers",
+  authMiddleware,
+  authorizeRoles("admin"),
+  async (req, res) => {
+    try {
+      const workers = await User.find({ role: "worker" }).select("-password");
+
+      res.status(200).json({
+        success: true,
+        count: workers.length,
+        workers,
+      });
+
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+);
 
 module.exports = router;

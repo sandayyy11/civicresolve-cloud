@@ -31,11 +31,23 @@ const issueSchema = new mongoose.Schema(
       default: "Pending",
     },
 
+    resolutionNote: {
+    type: String,
+    default: ""
+},
+
     reportedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    
     },
+
+    assignedTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null,
+},
   },
   {
     timestamps: true,
