@@ -1,22 +1,22 @@
 require("dotenv").config();
-const connectDB = require("./config/db");
-
 
 const express = require("express");
+const cors = require("cors");
+
+const connectDB = require("./config/db");
+
+const authRoutes = require("./routes/authRoutes");
+const issueRoutes = require("./routes/issueRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const workerRoutes = require("./routes/workerRoutes");
 
 const app = express();
 
 const PORT = process.env.PORT || 5000;
 
-
-
+// Middleware
+app.use(cors());
 app.use(express.json());
-
-// Import Routes
-const authRoutes = require("./routes/authRoutes");
-const issueRoutes = require("./routes/issueRoutes");
-const adminRoutes = require("./routes/adminRoutes");
-const workerRoutes = require("./routes/workerRoutes");
 
 // Home Route
 app.get("/", (req, res) => {
@@ -32,13 +32,14 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Auth Routes
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/issues", issueRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/worker", workerRoutes);
 
 connectDB();
+
 app.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
 });

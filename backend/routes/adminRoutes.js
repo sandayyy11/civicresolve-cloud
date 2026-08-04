@@ -1,6 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
-
+const Issue = require("../models/Issue");
 const User = require("../models/User");
 const authMiddleware = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
@@ -136,5 +136,52 @@ router.get(
     }
   }
 );
+
+router.get("/dashboard", authMiddleware, authorizeRoles("admin"), async (req, res) => {
+  try {
+
+    const totalIssues = await Issue.countDocuments();
+
+    const pendingIssues = await Issue.countDocuments({
+      status: "Pending",
+    });
+
+    const inProgressIssues = await Issue.countDocuments({
+      status: "In Progress",
+    });
+
+    const resolvedIssues = await Issue.countDocuments({
+      status: "Resolved",
+    });
+
+    const totalWorkers = await User.countDocuments({
+      role: "worker",
+    });
+
+    const totalCitizens = await User.countDocuments({
+      role: "citizen",
+    });
+
+    res.status(200).json({
+      success: true,
+      stats: {
+        totalIssues,
+        pendingIssues,
+        inProgressIssues,
+        resolvedIssues,
+        totalWorkers,
+        totalCitizens,
+      },
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+
+  }
+});
 
 module.exports = router;

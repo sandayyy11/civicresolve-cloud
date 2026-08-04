@@ -7,8 +7,8 @@ import {
   FaUsers,
   FaTasks,
   FaChartBar,
-  FaCog,
-} from "react-icons/fa";
+  FaMapMarkedAlt,
+} from "react-icons/fa";;
 
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -24,18 +24,22 @@ function Sidebar() {
   };
 
   const citizenLinks = [
-    { name: "Dashboard", icon: <FaHome />, path: "/citizen/dashboard" },
-    { name: "Report Issue", icon: <FaPlusCircle />, path: "/report" },
-    { name: "My Issues", icon: <FaClipboardList />, path: "/citizen/issues" },
-    { name: "Profile", icon: <FaUser />, path: "/citizen/profile" },
-    { name: "Settings", icon: <FaCog />, path: "/citizen/settings" },
-  ];
+  { name: "Dashboard", icon: <FaHome />, path: "/citizen/dashboard" },
+
+  { name: "Complaint Map", icon: <FaMapMarkedAlt />, path: "/citizen/map" },
+
+  { name: "Report Issue", icon: <FaPlusCircle />, path: "/report" },
+
+  { name: "My Issues", icon: <FaClipboardList />, path: "/citizen/issues" },
+
+  { name: "Profile", icon: <FaUser />, path: "/citizen/profile" },
+];
 
   const workerLinks = [
     { name: "Dashboard", icon: <FaHome />, path: "/worker/dashboard" },
     { name: "Assigned Issues", icon: <FaTasks />, path: "/worker/issues" },
     { name: "Profile", icon: <FaUser />, path: "/worker/profile" },
-    { name: "Settings", icon: <FaCog />, path: "/worker/settings" },
+    
   ];
 
   const adminLinks = [
@@ -43,7 +47,7 @@ function Sidebar() {
     { name: "All Issues", icon: <FaClipboardList />, path: "/admin/issues" },
     { name: "Users", icon: <FaUsers />, path: "/admin/users" },
     { name: "Analytics", icon: <FaChartBar />, path: "/admin/analytics" },
-    { name: "Settings", icon: <FaCog />, path: "/admin/settings" },
+    
   ];
 
   let links = citizenLinks;

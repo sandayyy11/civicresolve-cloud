@@ -20,11 +20,35 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+
     role: {
-    type: String,
-    enum: ["citizen", "worker", "admin"],
-    default: "citizen"
-}
+      type: String,
+      enum: ["citizen", "worker", "admin"],
+      default: "citizen",
+    },
+
+    // Worker Service Area
+    serviceArea: {
+      center: {
+        latitude: {
+          type: Number,
+        },
+        longitude: {
+          type: Number,
+        },
+      },
+
+      radiusKm: {
+        type: Number,
+        default: 5,
+      },
+    },
+
+    // Worker Availability
+    isAvailable: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,

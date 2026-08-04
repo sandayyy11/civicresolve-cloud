@@ -24,16 +24,39 @@ const issueSchema = new mongoose.Schema(
       ],
       required: true,
     },
+    priority: {
+  type: String,
+  enum: ["Low", "Medium", "High"],
+  default: "Medium",
+},
 
     status: {
       type: String,
       enum: ["Pending", "In Progress", "Resolved"],
       default: "Pending",
     },
-
+    
+    imageUrl: {
+  type: String,
+  default: "",
+},
+  location: {
+  latitude: {
+    type: Number,
+    required: true,
+  },
+  longitude: {
+    type: Number,
+    required: true,
+  },
+},
     resolutionNote: {
     type: String,
     default: ""
+},
+summary: {
+  type: String,
+  default: "",
 },
 
     reportedBy: {
@@ -47,6 +70,29 @@ const issueSchema = new mongoose.Schema(
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     default: null,
+},
+
+supportCount: {
+  type: Number,
+  default: 1,
+},
+
+supporters: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
+],
+
+assignmentType: {
+  type: String,
+  enum: ["Automatic", "Manual"],
+  default: "Automatic",
+},
+
+resolvedImage: {
+  type: String,
+  default: "",
 },
   },
   {

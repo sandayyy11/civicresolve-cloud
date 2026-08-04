@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ReportIssue from "./pages/ReportIssue";
 import Dashboard from "./pages/Dashboard";
+import Map from "./pages/citizen/Map";
 
 // Role Dashboards
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -70,6 +71,14 @@ function App() {
   element={
     <RoleProtectedRoute role="citizen">
       <Profile />
+    </RoleProtectedRoute>
+  }
+/>
+<Route
+  path="/citizen/map"
+  element={
+    <RoleProtectedRoute role="citizen">
+      <Map />
     </RoleProtectedRoute>
   }
 />
