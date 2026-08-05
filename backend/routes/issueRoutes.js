@@ -8,6 +8,21 @@ const upload = require("../middleware/uploadMiddleware");
 const cloudinary = require("../config/cloudinary");
 const categorizeIssue = require("../services/aiService");
 
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
+
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 router.post("/", authMiddleware,upload.single("image"), async (req, res) => {
   try {
     const { title, description,  latitude,
@@ -184,6 +199,86 @@ router.delete("/:id", authMiddleware, async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Issue deleted successfully",
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+router.patch("/:id/support", authMiddleware, async (req, res) => {
+  try {
+    const issue = await Issue.findById(req.params.id);
+
+    if (!issue) {
+      return res.status(404).json({
+        success: false,
+        message: "Issue not found",
+      });
+    }
+
+    // Check if user already supported
+    const alreadySupported = issue.supporters.some(
+      (supporter) => supporter.toString() === req.user.id
+    );
+
+    if (alreadySupported) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already supported this complaint.",
+      });
+    }
+
+    // Add supporter
+    issue.supporters.push(req.user.id);
+
+    // Increase count
+    issue.supportCount += 1;
+
+    await issue.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Complaint supported successfully",
+      supportCount: issue.supportCount,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+router.post("/check-duplicates", authMiddleware, async (req, res) => {
+  try {
+    const { latitude, longitude, category } = req.body;
+
+    const issues = await Issue.find({
+      category,
+      status: { $ne: "Resolved" },
+    });
+
+    const nearbyIssues = issues.filter((issue) => {
+      if (!issue.location) return false;
+
+      const distance = getDistance(
+        latitude,
+        longitude,
+        issue.location.latitude,
+        issue.location.longitude
+      );
+
+      return distance <= 10000;
+    });
+
+    res.json({
+      success: true,
+      duplicates: nearbyIssues,
     });
 
   } catch (error) {

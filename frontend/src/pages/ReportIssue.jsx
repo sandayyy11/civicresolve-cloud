@@ -7,6 +7,7 @@ import {
 } from "react-icons/fa";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
+import DuplicateComplaintModal from "../components/modals/DuplicateComplaintModal";
 
 
 function ReportIssue() {
@@ -20,6 +21,9 @@ const [longitude, setLongitude] = useState("");
 const [image, setImage] = useState(null);
 const [preview, setPreview] = useState("");
 const [loading, setLoading] = useState(false);
+const [duplicates, setDuplicates] = useState([]);
+const [showDuplicates, setShowDuplicates] = useState(false);
+const [pendingSubmission, setPendingSubmission] = useState(false);
 const fileInputRef = useRef(null);
 const navigate = useNavigate();
 const [aiSummary, setAiSummary] = useState("");
@@ -44,24 +48,31 @@ const detectLocation = () => {
   );
 };
 
-const handleImageChange = (e) => {
-  const file = e.target.files[0];
+const checkDuplicates = async () => {
+  try {
+    const response = await api.post("/issues/check-duplicates", {
+      latitude,
+      longitude,
+      category,
+    });
 
-  if (!file) return;
+    if (response.data.duplicates.length > 0) {
+      setDuplicates(response.data.duplicates);
+      setShowDuplicates(true);
+      setPendingSubmission(true);
 
-  setImage(file);
+      return true;
+    }
 
-  const imageURL = URL.createObjectURL(file);
+    return false;
 
-  setPreview(imageURL);
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
 };
 
-const handleSubmit = async () => {
-  if (!title || !description) {
-    alert("Please complete all required fields.");
-    return;
-  }
-
+const submitIssue = async () => {
   try {
     setSubmitting(true);
 
@@ -69,7 +80,6 @@ const handleSubmit = async () => {
 
     formData.append("title", title);
     formData.append("description", description);
-
     formData.append("latitude", latitude);
     formData.append("longitude", longitude);
 
@@ -93,14 +103,39 @@ const handleSubmit = async () => {
     }, 1500);
 
   } catch (error) {
-    console.error(error);
-
     alert(
       error.response?.data?.message ||
       "Something went wrong."
     );
   } finally {
     setSubmitting(false);
+  }
+};
+
+const handleImageChange = (e) => {
+  const file = e.target.files[0];
+
+  if (!file) return;
+
+  setImage(file);
+
+  const imageURL = URL.createObjectURL(file);
+
+  setPreview(imageURL);
+};
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!title || !description) {
+    alert("Please complete all required fields.");
+    return;
+  }
+
+  const duplicateFound = await checkDuplicates();
+
+  if (!duplicateFound) {
+    submitIssue();
   }
 };
 
@@ -325,6 +360,37 @@ const handleSubmit = async () => {
         </div>
 
       </div>
+      <DuplicateComplaintModal
+  isOpen={showDuplicates}
+  duplicates={duplicates}
+  onClose={() => {
+    setShowDuplicates(false);
+    setPendingSubmission(false);
+  }}
+  onSupport={async (issueId) => {
+    try {
+      await api.patch(`/issues/${issueId}/support`);
+
+      alert("Complaint supported successfully!");
+
+      setShowDuplicates(false);
+      setPendingSubmission(false);
+
+      navigate("/citizen/dashboard");
+
+    } catch (error) {
+      alert(
+        error.response?.data?.message ||
+        "Failed to support complaint."
+      );
+    }
+  }}
+  onReportAnyway={() => {
+    setShowDuplicates(false);
+    setPendingSubmission(false);
+    submitIssue();
+  }}
+/>
     </DashboardLayout>
   );
 }
