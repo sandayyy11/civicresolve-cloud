@@ -94,6 +94,24 @@ resolvedImage: {
   type: String,
   default: "",
 },
+
+
+
+feedback: {
+  rating: {
+    type: Number,
+    min: 1,
+    max: 5,
+  },
+
+  comment: {
+    type: String,
+    default: "",
+  },
+
+  submittedAt: Date,
+},
+
   },
   {
     timestamps: true,

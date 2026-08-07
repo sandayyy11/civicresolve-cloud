@@ -11,46 +11,56 @@ function Login() {
   const [password, setPassword] = useState("");
 
   const navigate = useNavigate();
-const { login } = useAuth();
+  const { login } = useAuth();
 
-const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!email || !password) {
-    alert("Please fill in all fields.");
-    return;
-  }
-
-  try {
-    setLoading(true);
-
-    const response = await api.post("/auth/login", {
-      email,
-      password,
-    });
-
-    login(response.data.user, response.data.token);
-
-    const role = response.data.user.role;
-
-    if (role === "admin") {
-      navigate("/admin/dashboard");
-    } else if (role === "worker") {
-      navigate("/worker/dashboard");
-    } else {
-      navigate("/citizen/dashboard");
+    if (!email || !password) {
+      alert("Please fill in all fields.");
+      return;
     }
 
-  } catch (error) {
-    alert(
-      error.response?.data?.message || "Login failed"
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      setLoading(true);
+
+      const response = await api.post("/auth/login", {
+        email,
+        password,
+      });
+
+      login(response.data.user, response.data.token);
+
+      const role = response.data.user.role;
+
+      if (role === "admin") {
+        navigate("/admin/dashboard");
+      } else if (role === "worker") {
+        navigate("/worker/dashboard");
+      } else {
+        navigate("/citizen/dashboard");
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setGoogleLoading(true);
+      alert("Google Sign-In will be enabled in the next step once Firebase is configured.");
+    } catch (error) {
+      console.error(error);
+      alert("Google Sign-In failed");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 flex items-center justify-center px-6">
@@ -122,7 +132,7 @@ const [loading, setLoading] = useState(false);
           <div className="flex-grow border-t"></div>
         </div>
 
-        <GoogleButton />
+        <GoogleButton onClick={handleGoogleLogin} loading={googleLoading} />
 
         <p className="text-center mt-6 text-gray-600">
           Don't have an account?{" "}

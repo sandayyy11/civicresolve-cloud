@@ -13,7 +13,7 @@ import WorkerDashboard from "./pages/worker/Dashboard";
 import CitizenDashboard from "./pages/citizen/Dashboard";
 import MyIssues from "./pages/citizen/MyIssues";
 import Profile from "./pages/citizen/Profile";
-
+import WorkerIssues from "./pages/worker/WorkerIssues";
 // Protected Routes
 import ProtectedRoute from "./components/protected/ProtectedRoute";
 import RoleProtectedRoute from "./components/protected/RoleProtectedRoute";
@@ -94,6 +94,14 @@ function App() {
             </RoleProtectedRoute>
           }
         />
+        <Route
+  path="/worker/issues"
+  element={
+    <RoleProtectedRoute role="worker">
+      <WorkerIssues />
+    </RoleProtectedRoute>
+  }
+/>
 
         {/* Admin Routes */}
         <Route

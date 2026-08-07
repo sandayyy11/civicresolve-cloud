@@ -2,6 +2,7 @@ const express = require("express");
 
 const router = express.Router();
 
+const User = require("../models/User");
 const Issue = require("../models/Issue");
 const authMiddleware = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
@@ -47,6 +48,31 @@ let imageUrl = "";
 
 const aiResult = await categorizeIssue(description);
 
+// Find workers with the same specialization
+const workers = await User.find({
+  role: "worker",
+  specialization: aiResult.category,
+});
+
+// Automatically choose the worker with the fewest assigned active issues
+let assignedWorker = null;
+
+if (workers.length > 0) {
+  let minIssues = Infinity;
+
+  for (const worker of workers) {
+    const issueCount = await Issue.countDocuments({
+      assignedTo: worker._id,
+      status: { $ne: "Resolved" },
+    });
+
+    if (issueCount < minIssues) {
+      minIssues = issueCount;
+      assignedWorker = worker;
+    }
+  }
+}
+
 console.log(aiResult);
 
     const issue = new Issue({
@@ -65,6 +91,7 @@ console.log(aiResult);
   },
 
   reportedBy: req.user.id,
+  assignedTo: assignedWorker ? assignedWorker._id : null,
 });
 
     await issue.save();
@@ -286,6 +313,166 @@ router.post("/check-duplicates", authMiddleware, async (req, res) => {
       success: false,
       message: error.message,
     });
+  }
+});
+
+router.get("/assigned", authMiddleware, async (req, res) => {
+  try {
+
+    const issues = await Issue.find({
+      assignedTo: req.user.id,
+    })
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      issues,
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+
+  }
+});
+
+router.patch("/:id/status", authMiddleware, async (req, res) => {
+  try {
+
+    const { status } = req.body;
+
+    const issue = await Issue.findById(req.params.id);
+
+    if (!issue) {
+      return res.status(404).json({
+        success: false,
+        message: "Issue not found",
+      });
+    }
+
+    issue.status = status;
+
+    await issue.save();
+
+    res.json({
+      success: true,
+      issue,
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+
+  }
+});
+
+router.patch("/:id/resolve", authMiddleware, async (req, res) => {
+  try {
+    const { resolutionNote } = req.body;
+
+    const issue = await Issue.findById(req.params.id);
+
+    if (!issue) {
+      return res.status(404).json({
+        success: false,
+        message: "Issue not found",
+      });
+    }
+
+    issue.status = "Resolved";
+    issue.resolutionNote = resolutionNote;
+
+    await issue.save();
+
+    res.status(200).json({
+      success: true,
+      issue,
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+router.patch("/:id/feedback", authMiddleware, async (req, res) => {
+  try {
+
+    const { rating, comment } = req.body;
+
+    const issue = await Issue.findById(req.params.id);
+
+    if (!issue) {
+      return res.status(404).json({
+        success: false,
+        message: "Issue not found",
+      });
+    }
+
+    if (issue.status !== "Resolved") {
+      return res.status(400).json({
+        success: false,
+        message: "Only resolved complaints can receive feedback.",
+      });
+    }
+
+    if (issue.feedback && issue.feedback.rating) {
+      return res.status(400).json({
+        success: false,
+        message: "Feedback has already been submitted for this complaint.",
+      });
+    }
+
+    issue.feedback = {
+      rating,
+      comment,
+      submittedAt: new Date(),
+    };
+
+    await issue.save();
+
+    const workerId = issue.assignedTo?.toString();
+
+    if (workerId) {
+      const worker = await User.findById(workerId);
+
+      if (worker) {
+        const numericRating = Number(rating);
+        const currentRatingSum = Number(worker.ratingSum ?? 0);
+        const currentTotalRatings = Number(worker.totalRatings ?? 0);
+
+        worker.ratingSum = currentRatingSum + numericRating;
+        worker.totalRatings = currentTotalRatings + 1;
+        worker.averageRating = worker.totalRatings > 0
+          ? Number(worker.ratingSum) / Number(worker.totalRatings)
+          : 0;
+
+        await worker.save();
+      }
+    }
+
+    res.json({
+      success: true,
+      issue,
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+
   }
 });
 

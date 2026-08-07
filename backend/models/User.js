@@ -27,6 +27,18 @@ const userSchema = new mongoose.Schema(
       default: "citizen",
     },
 
+    specialization: {
+  type: String,
+  enum: [
+    "Road",
+    "Garbage",
+    "Water",
+    "Electricity",
+    "Other",
+  ],
+  default: "Other",
+},
+
     // Worker Service Area
     serviceArea: {
       center: {
@@ -49,6 +61,22 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    
+    averageRating: {
+  type: Number,
+  default: 0,
+},
+
+totalRatings: {
+  type: Number,
+  default: 0,
+},
+
+ratingSum: {
+  type: Number,
+  default: 0,
+},
+
   },
   {
     timestamps: true,
