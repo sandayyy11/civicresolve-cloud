@@ -1,6 +1,8 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const app = require("../config/firebaseAdmin");
+const { getAuth } = require("firebase-admin/auth");
 const User = require("../models/User");
 const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
@@ -131,6 +133,72 @@ res.status(200).json({
     res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+});
+
+router.post("/google", async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Firebase ID token is required.",
+      });
+    }
+
+    const decodedToken = await getAuth(app).verifyIdToken(idToken);
+    const email = decodedToken.email;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Google account email is required.",
+      });
+    }
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = new User({
+        name: decodedToken.name || email.split("@")[0],
+        email,
+        password: "google-oauth",
+        role: "citizen",
+      });
+
+      await user.save();
+    }
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Google login successful",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(401).json({
+      success: false,
+      message: "Google authentication failed",
     });
   }
 });

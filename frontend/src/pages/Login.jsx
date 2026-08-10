@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link,useNavigate } from "react-router-dom";
+import { signInWithPopup } from "firebase/auth";
 import GoogleButton from "../components/auth/GoogleButton";
 import PasswordInput from "../components/auth/PasswordInput";
 import TextInput from "../components/auth/TextInput";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { auth, googleProvider } from "../firebase";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -53,10 +55,28 @@ function Login() {
   const handleGoogleLogin = async () => {
     try {
       setGoogleLoading(true);
-      alert("Google Sign-In will be enabled in the next step once Firebase is configured.");
+
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
+
+      const response = await api.post("/auth/google", {
+        idToken,
+      });
+
+      login(response.data.user, response.data.token);
+
+      const role = response.data.user.role;
+
+      if (role === "admin") {
+        navigate("/admin/dashboard");
+      } else if (role === "worker") {
+        navigate("/worker/dashboard");
+      } else {
+        navigate("/citizen/dashboard");
+      }
     } catch (error) {
       console.error(error);
-      alert("Google Sign-In failed");
+      alert(error.response?.data?.message || "Google Sign-In failed");
     } finally {
       setGoogleLoading(false);
     }

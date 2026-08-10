@@ -25,3 +25,12 @@ dist-ssr
 node_modules
 .env
 dist
+serviceAccountKey.json
+# Environment files
+.env
+backend/.env
+frontend/.env
+
+# Firebase service account
+backend/serviceAccountKey.json
+serviceAccountKey.json
