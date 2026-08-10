@@ -44,6 +44,7 @@ function Sidebar() {
 
   const adminLinks = [
     { name: "Dashboard", icon: <FaHome />, path: "/admin/dashboard" },
+    { name: "Create Worker", icon: <FaPlusCircle />, path: "/admin/create-worker" },
     { name: "All Issues", icon: <FaClipboardList />, path: "/admin/issues" },
     { name: "Users", icon: <FaUsers />, path: "/admin/users" },
     { name: "Analytics", icon: <FaChartBar />, path: "/admin/analytics" },

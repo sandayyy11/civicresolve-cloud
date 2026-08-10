@@ -8,6 +8,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
 const cloudinary = require("../config/cloudinary");
 const categorizeIssue = require("../services/aiService");
+const Notification = require("../models/Notification");
 
 function getDistance(lat1, lon1, lat2, lon2) {
   const R = 6371000;
@@ -48,11 +49,21 @@ let imageUrl = "";
 
 const aiResult = await categorizeIssue(description);
 
-// Find workers with the same specialization
-const workers = await User.find({
+// Find available workers with the same specialization
+let workers = await User.find({
   role: "worker",
   specialization: aiResult.category,
+  isAvailable: true,
 });
+
+// Fall back to available general-purpose workers when no specialist is available
+if (workers.length === 0 && aiResult.category !== "Other") {
+  workers = await User.find({
+    role: "worker",
+    specialization: "Other",
+    isAvailable: true,
+  });
+}
 
 // Automatically choose the worker with the fewest assigned active issues
 let assignedWorker = null;
@@ -95,6 +106,16 @@ console.log(aiResult);
 });
 
     await issue.save();
+
+    if (assignedWorker) {
+      await Notification.create({
+        user: assignedWorker._id,
+        relatedIssue: issue._id,
+        title: "New complaint assigned",
+        message: `You have been assigned the complaint: ${issue.title}`,
+        type: "assignment",
+      });
+    }
 
     res.status(201).json({
       success: true,
@@ -156,6 +177,7 @@ router.get("/", async (req, res) => {
 
     const issues = await Issue.find(filter)
   .populate("reportedBy", "name email")
+  .populate("assignedTo", "name email specialization")
   .sort({ createdAt: -1 })
   .skip(skip)
   .limit(Number(limit));
@@ -192,9 +214,21 @@ router.patch("/:id/status", authMiddleware, async (req, res) => {
       });
     }
 
+    const previousStatus = issue.status;
+
     issue.status = status;
 
     await issue.save();
+
+    if (status === "In Progress" && previousStatus !== "In Progress") {
+      await Notification.create({
+        user: issue.reportedBy,
+        relatedIssue: issue._id,
+        title: "Complaint in progress",
+        message: `Your complaint \"${issue.title}\" is now in progress.`,
+        type: "status_update",
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -390,6 +424,14 @@ router.patch("/:id/resolve", authMiddleware, async (req, res) => {
 
     await issue.save();
 
+    await Notification.create({
+      user: issue.reportedBy,
+      relatedIssue: issue._id,
+      title: "Complaint resolved",
+      message: `Your complaint \"${issue.title}\" has been resolved.`,
+      type: "resolved",
+    });
+
     res.status(200).json({
       success: true,
       issue,
@@ -458,6 +500,14 @@ router.patch("/:id/feedback", authMiddleware, async (req, res) => {
           : 0;
 
         await worker.save();
+
+        await Notification.create({
+          user: worker._id,
+          relatedIssue: issue._id,
+          title: "New feedback received",
+          message: `You received feedback for the complaint: ${issue.title}`,
+          type: "feedback",
+        });
       }
     }
 

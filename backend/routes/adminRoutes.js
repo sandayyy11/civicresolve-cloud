@@ -13,7 +13,7 @@ router.post(
   authorizeRoles("admin"),
   async (req, res) => {
     try {
-      const { name, email, password } = req.body;
+      const { name, email, password, specialization } = req.body;
 
       // Check if email already exists
       const existingUser = await User.findOne({ email });
@@ -34,6 +34,7 @@ router.post(
         email,
         password: hashedPassword,
         role: "worker",
+        specialization,
       });
 
       await worker.save();
@@ -136,6 +137,24 @@ router.get(
     }
   }
 );
+
+router.get("/citizens", authMiddleware, authorizeRoles("admin"), async (req, res) => {
+  try {
+    const citizens = await User.find({ role: "citizen" }).select("name email createdAt");
+
+    res.status(200).json({
+      success: true,
+      count: citizens.length,
+      citizens,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
 
 router.get("/dashboard", authMiddleware, authorizeRoles("admin"), async (req, res) => {
   try {

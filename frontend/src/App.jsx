@@ -9,10 +9,15 @@ import Map from "./pages/citizen/Map";
 
 // Role Dashboards
 import AdminDashboard from "./pages/admin/Dashboard";
+import CreateWorker from "./pages/admin/CreateWorker";
+import AllIssues from "./pages/admin/AllIssues";
+import Users from "./pages/admin/Users";
+import Analytics from "./pages/admin/Analytics";
 import WorkerDashboard from "./pages/worker/Dashboard";
 import CitizenDashboard from "./pages/citizen/Dashboard";
 import MyIssues from "./pages/citizen/MyIssues";
-import Profile from "./pages/citizen/Profile";
+import CitizenProfile from "./pages/citizen/Profile";
+import WorkerProfile from "./pages/worker/Profile";
 import WorkerIssues from "./pages/worker/WorkerIssues";
 // Protected Routes
 import ProtectedRoute from "./components/protected/ProtectedRoute";
@@ -70,7 +75,7 @@ function App() {
   path="/citizen/profile"
   element={
     <RoleProtectedRoute role="citizen">
-      <Profile />
+      <CitizenProfile />
     </RoleProtectedRoute>
   }
 />
@@ -103,12 +108,53 @@ function App() {
   }
 />
 
+        <Route
+  path="/worker/profile"
+  element={
+    <RoleProtectedRoute role="worker">
+      <WorkerProfile />
+    </RoleProtectedRoute>
+  }
+/>
+
         {/* Admin Routes */}
         <Route
           path="/admin/dashboard"
           element={
             <RoleProtectedRoute role="admin">
               <AdminDashboard />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/create-worker"
+          element={
+            <RoleProtectedRoute role="admin">
+              <CreateWorker />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/issues"
+          element={
+            <RoleProtectedRoute role="admin">
+              <AllIssues />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <RoleProtectedRoute role="admin">
+              <Users />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/analytics"
+          element={
+            <RoleProtectedRoute role="admin">
+              <Analytics />
             </RoleProtectedRoute>
           }
         />

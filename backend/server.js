@@ -9,6 +9,8 @@ const authRoutes = require("./routes/authRoutes");
 const issueRoutes = require("./routes/issueRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const workerRoutes = require("./routes/workerRoutes");
+const userRoutes = require("./routes/userRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 const app = express();
 
@@ -37,6 +39,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/issues", issueRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/worker", workerRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 connectDB();
 
