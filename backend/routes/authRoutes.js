@@ -7,27 +7,7 @@ const User = require("../models/User");
 const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
-
-// Temporary storage (instead of a database)
-const users = [];
-
-// GET - View all users
-router.get("/users", async (req, res) => {
-  try {
-    const users = await User.find();
-
-    res.status(200).json({
-      success: true,
-      count: users.length,
-      data: users,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-});
+const { isValidEmail, requiredText, validatePassword } = require("../services/validationService");
 
 // POST - Register a new user
 
@@ -36,6 +16,10 @@ router.post("/register", async (req, res) => {
   try {
     
     const { name, email, password } = req.body;
+    const validationError = requiredText(name, "Name", { max: 100 })
+      || (!isValidEmail(email) ? "A valid email is required" : null)
+      || validatePassword(password);
+    if (validationError) return res.status(400).json({ success: false, message: validationError });
     // Check if email already exists
     const existingUser = await User.findOne({ email });
 
@@ -83,6 +67,9 @@ const user = new User({
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (!isValidEmail(email) || typeof password !== "string" || password.length === 0 || password.length > 128) {
+      return res.status(400).json({ success: false, message: "Valid email and password are required" });
+    }
 
     // Find user
     const user = await User.findOne({ email });

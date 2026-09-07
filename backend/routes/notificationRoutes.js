@@ -4,6 +4,7 @@ const router = express.Router();
 
 const Notification = require("../models/Notification");
 const authMiddleware = require("../middleware/authMiddleware");
+const { isValidObjectId } = require("../services/validationService");
 
 router.get("/", authMiddleware, async (req, res) => {
   try {
@@ -52,6 +53,9 @@ router.patch("/read-all", authMiddleware, async (req, res) => {
 
 router.patch("/:id/read", authMiddleware, async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ success: false, message: "Invalid notification ID" });
+    }
     const notification = await Notification.findOneAndUpdate(
       {
         _id: req.params.id,

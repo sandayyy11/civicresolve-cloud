@@ -1,6 +1,7 @@
 const express = require("express");
 const authMiddleware = require("../middleware/authMiddleware");
 const User = require("../models/User");
+const { requiredText } = require("../services/validationService");
 
 const router = express.Router();
 
@@ -46,6 +47,19 @@ router.patch("/profile", authMiddleware, async (req, res) => {
         success: false,
         message: "Only name, phone, address, and profileImage can be updated",
       });
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ success: false, message: "At least one profile field is required" });
+    }
+    if (req.body.name !== undefined) {
+      const nameError = requiredText(req.body.name, "Name", { max: 100 });
+      if (nameError) return res.status(400).json({ success: false, message: nameError });
+    }
+    for (const field of ["phone", "address", "profileImage"]) {
+      if (req.body[field] !== undefined && (typeof req.body[field] !== "string" || req.body[field].length > 500)) {
+        return res.status(400).json({ success: false, message: `Invalid ${field}` });
+      }
     }
 
     const user = await User.findById(req.user.id);

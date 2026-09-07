@@ -1,5 +1,17 @@
 const mongoose = require("mongoose");
 
+// Explicitly define this embedded schema because `type` is a special Mongoose
+// schema option. The shorthand array form can otherwise be interpreted as an
+// array of strings instead of structured POI documents.
+const nearbyPlaceSchema = new mongoose.Schema(
+  {
+    type: { type: String },
+    name: { type: String },
+    distanceMeters: { type: Number },
+  },
+  { _id: false }
+);
+
 const issueSchema = new mongoose.Schema(
   {
     title: {
@@ -43,12 +55,28 @@ const issueSchema = new mongoose.Schema(
   location: {
   latitude: {
     type: Number,
-    required: true,
   },
   longitude: {
     type: Number,
-    required: true,
   },
+},
+locationContext: {
+  nearbyPlaces: {
+    type: [nearbyPlaceSchema],
+    default: [],
+  },
+},
+priorityReason: {
+  type: String,
+  default: "",
+},
+priorityReasons: {
+  type: [String],
+  default: [],
+},
+priorityConfidence: {
+  type: String,
+  default: "",
 },
     resolutionNote: {
     type: String,

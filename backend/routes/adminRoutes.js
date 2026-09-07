@@ -4,6 +4,8 @@ const Issue = require("../models/Issue");
 const User = require("../models/User");
 const authMiddleware = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
+const Notification = require("../models/Notification");
+const { ISSUE_CATEGORIES, ISSUE_STATUSES, isValidEmail, isValidObjectId, requiredText, validatePassword } = require("../services/validationService");
 
 const router = express.Router();
 
@@ -14,6 +16,11 @@ router.post(
   async (req, res) => {
     try {
       const { name, email, password, specialization } = req.body;
+      const validationError = requiredText(name, "Name", { max: 100 })
+        || (!isValidEmail(email) ? "A valid email is required" : null)
+        || validatePassword(password)
+        || (!ISSUE_CATEGORIES.includes(specialization) ? "Invalid specialization" : null);
+      if (validationError) return res.status(400).json({ success: false, message: validationError });
 
       // Check if email already exists
       const existingUser = await User.findOne({ email });
@@ -65,6 +72,10 @@ router.patch(
   async (req, res) => {
     try {
       const { workerId } = req.body;
+
+      if (!isValidObjectId(req.params.issueId) || !isValidObjectId(workerId)) {
+        return res.status(400).json({ success: false, message: "Invalid issue or worker ID" });
+      }
 
       const Issue = require("../models/Issue");
 
@@ -200,6 +211,67 @@ router.get("/dashboard", authMiddleware, authorizeRoles("admin"), async (req, re
       message: error.message,
     });
 
+  }
+});
+
+router.patch("/issues/:issueId/status", authMiddleware, authorizeRoles("admin"), async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!isValidObjectId(req.params.issueId)) {
+      return res.status(400).json({ success: false, message: "Invalid issue ID" });
+    }
+    if (!ISSUE_STATUSES.includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid issue status" });
+    }
+
+    const issue = await Issue.findById(req.params.issueId);
+    if (!issue) return res.status(404).json({ success: false, message: "Issue not found" });
+
+    const previousStatus = issue.status;
+    issue.status = status;
+    await issue.save();
+
+    if (status === "In Progress" && previousStatus !== "In Progress") {
+      await Notification.create({
+        user: issue.reportedBy,
+        relatedIssue: issue._id,
+        title: "Complaint in progress",
+        message: `Your complaint \"${issue.title}\" is now in progress.`,
+        type: "status_update",
+      });
+    }
+
+    res.status(200).json({ success: true, issue });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Unable to update issue status" });
+  }
+});
+
+router.patch("/issues/:issueId/resolve", authMiddleware, authorizeRoles("admin"), async (req, res) => {
+  try {
+    if (!isValidObjectId(req.params.issueId)) {
+      return res.status(400).json({ success: false, message: "Invalid issue ID" });
+    }
+    if (req.body.resolutionNote !== undefined && (typeof req.body.resolutionNote !== "string" || req.body.resolutionNote.length > 2000)) {
+      return res.status(400).json({ success: false, message: "Resolution note must be at most 2000 characters" });
+    }
+    const issue = await Issue.findById(req.params.issueId);
+    if (!issue) return res.status(404).json({ success: false, message: "Issue not found" });
+
+    issue.status = "Resolved";
+    issue.resolutionNote = req.body.resolutionNote || "";
+    await issue.save();
+    await Notification.create({
+      user: issue.reportedBy,
+      relatedIssue: issue._id,
+      title: "Complaint resolved",
+      message: `Your complaint \"${issue.title}\" has been resolved.`,
+      type: "resolved",
+    });
+
+    res.status(200).json({ success: true, issue });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Unable to resolve issue" });
   }
 });
 

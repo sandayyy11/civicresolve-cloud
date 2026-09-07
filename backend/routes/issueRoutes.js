@@ -5,30 +5,31 @@ const router = express.Router();
 const User = require("../models/User");
 const Issue = require("../models/Issue");
 const authMiddleware = require("../middleware/authMiddleware");
-const upload = require("../middleware/uploadMiddleware");
+const authorizeRoles = require("../middleware/roleMiddleware");
+const { singleImage } = require("../middleware/uploadMiddleware");
 const cloudinary = require("../config/cloudinary");
 const categorizeIssue = require("../services/aiService");
 const Notification = require("../models/Notification");
+const { findPotentialDuplicates } = require("../services/duplicateDetectionService");
+const { getLocationContext, hasValidCoordinates } = require("../services/locationService");
+const { calculatePriority } = require("../services/priorityService");
+const {
+  canDeleteIssue,
+  canSubmitFeedback,
+} = require("../services/issueAuthorizationService");
+const {
+  ISSUE_CATEGORIES,
+  isValidObjectId,
+  parsePagination,
+  validateIssueInput,
+} = require("../services/validationService");
 
-function getDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371000;
-
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) ** 2;
-
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-router.post("/", authMiddleware,upload.single("image"), async (req, res) => {
+router.post("/", authMiddleware, authorizeRoles("citizen"), singleImage, async (req, res) => {
   try {
     const { title, description,  latitude,
   longitude,} = req.body;
+    const inputError = validateIssueInput(req.body);
+    if (inputError) return res.status(400).json({ success: false, message: inputError });
     
 
     
@@ -37,17 +38,30 @@ let imageUrl = "";
 
 
    if (req.file) {
-  const result = await cloudinary.uploader.upload(
-    `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
-    {
-      folder: "civicresolve",
-    }
-  );
+  const result = await new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream({ folder: "civicresolve" }, (error, uploadResult) => {
+      if (error) return reject(error);
+      resolve(uploadResult);
+    });
+    stream.end(req.file.buffer);
+  });
 
   imageUrl = result.secure_url;
 }
 
-const aiResult = await categorizeIssue(description);
+// AI categorization is an enhancement, NOT a hard dependency.
+// If Gemini fails (quota exceeded, timeout, etc.), categorizeIssue
+// returns a safe fallback with aiUnavailable=true.
+const locationContext = await getLocationContext(latitude, longitude);
+const aiResult = await categorizeIssue(description, locationContext);
+const aiUnavailable = aiResult.aiUnavailable === true;
+const priorityAssessment = calculatePriority({
+  category: aiResult.category,
+  description,
+  locationContext,
+  supportCount: 1,
+  aiAssessment: aiResult,
+});
 
 // Find available workers with the same specialization
 let workers = await User.find({
@@ -86,24 +100,30 @@ if (workers.length > 0) {
 
 console.log(aiResult);
 
-    const issue = new Issue({
+    const issueData = {
   title,
   description,
 
   category: aiResult.category,
-  priority: aiResult.priority,
+  priority: priorityAssessment.priority,
   summary: aiResult.summary,
+  locationContext,
+  priorityReason: priorityAssessment.priorityReason,
+  priorityReasons: priorityAssessment.priorityReasons,
+  priorityConfidence: priorityAssessment.confidence,
 
   imageUrl,
 
-  location: {
-    latitude,
-    longitude,
-  },
-
   reportedBy: req.user.id,
   assignedTo: assignedWorker ? assignedWorker._id : null,
-});
+};
+
+    // Keep location optional for citizens who decline or cannot provide it.
+    if (hasValidCoordinates(latitude, longitude)) {
+      issueData.location = { latitude: Number(latitude), longitude: Number(longitude) };
+    }
+
+    const issue = new Issue(issueData);
 
     await issue.save();
 
@@ -119,19 +139,24 @@ console.log(aiResult);
 
     res.status(201).json({
       success: true,
-      message: "Issue reported successfully",
+      message: aiUnavailable
+        ? "Complaint submitted successfully. AI-assisted analysis is temporarily unavailable, so priority was determined using CivicResolve's built-in safety and location rules."
+        : "Issue reported successfully",
       issue,
+      aiUnavailable,
     });
 
   } catch (error) {
+    // Do NOT expose internal error details to the frontend.
+    console.error("Complaint creation failed:", error);
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: "We couldn't submit your complaint. Please try again.",
     });
   }
 });
 
-router.get("/my", authMiddleware, async (req, res) => {
+router.get("/my", authMiddleware, authorizeRoles("citizen"), async (req, res) => {
   try {
     const issues = await Issue.find({
       reportedBy: req.user.id,
@@ -153,10 +178,21 @@ router.get("/my", authMiddleware, async (req, res) => {
 });
 
 
-router.get("/", async (req, res) => {
+router.get("/", authMiddleware, authorizeRoles("citizen", "admin"), async (req, res) => {
   try {
-    const { status, category, search, page = 1,
-  limit = 5, } = req.query;
+    const { status, category, search } = req.query;
+    const pagination = parsePagination(req.query);
+    if (pagination.error) return res.status(400).json({ success: false, message: pagination.error });
+    const { page, limit } = pagination;
+    if (status && !["Pending", "In Progress", "Resolved"].includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid status filter" });
+    }
+    if (category && !ISSUE_CATEGORIES.includes(category)) {
+      return res.status(400).json({ success: false, message: "Invalid category filter" });
+    }
+    if (search !== undefined && (typeof search !== "string" || search.length > 200)) {
+      return res.status(400).json({ success: false, message: "Invalid search query" });
+    }
 
      let filter = {};
      const skip = (page - 1) * limit;
@@ -175,12 +211,20 @@ router.get("/", async (req, res) => {
        };
 }
 
-    const issues = await Issue.find(filter)
-  .populate("reportedBy", "name email")
-  .populate("assignedTo", "name email specialization")
-  .sort({ createdAt: -1 })
-  .skip(skip)
-  .limit(Number(limit));
+    let issueQuery = Issue.find(filter).sort({ createdAt: -1 });
+    if (req.user.role === "admin") {
+      issueQuery = issueQuery
+        .populate("reportedBy", "name email")
+        .populate("assignedTo", "name email specialization");
+    } else {
+      // Citizens need map data, but not reporter, worker, feedback, or other
+      // administrative details for every complaint.
+      issueQuery = issueQuery.select(
+        "title description category priority status imageUrl location summary supportCount locationContext priorityReason createdAt updatedAt"
+      );
+    }
+
+    const issues = await issueQuery.skip(skip).limit(Number(limit));
 
   const totalIssues = await Issue.countDocuments(filter);
 
@@ -201,51 +245,9 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.patch("/:id/status", authMiddleware, async (req, res) => {
-  try {
-    const { status } = req.body;
-
-    const issue = await Issue.findById(req.params.id);
-
-    if (!issue) {
-      return res.status(404).json({
-        success: false,
-        message: "Issue not found",
-      });
-    }
-
-    const previousStatus = issue.status;
-
-    issue.status = status;
-
-    await issue.save();
-
-    if (status === "In Progress" && previousStatus !== "In Progress") {
-      await Notification.create({
-        user: issue.reportedBy,
-        relatedIssue: issue._id,
-        title: "Complaint in progress",
-        message: `Your complaint \"${issue.title}\" is now in progress.`,
-        type: "status_update",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Issue status updated successfully",
-      issue,
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-});
-
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) return res.status(400).json({ success: false, message: "Invalid issue ID" });
     const issue = await Issue.findById(req.params.id);
 
     if (!issue) {
@@ -253,6 +255,10 @@ router.delete("/:id", authMiddleware, async (req, res) => {
         success: false,
         message: "Issue not found",
       });
+    }
+
+    if (!canDeleteIssue(req.user, issue)) {
+      return res.status(403).json({ success: false, message: "You do not have permission to delete this issue" });
     }
 
     await issue.deleteOne();
@@ -270,8 +276,9 @@ router.delete("/:id", authMiddleware, async (req, res) => {
   }
 });
 
-router.patch("/:id/support", authMiddleware, async (req, res) => {
+router.patch("/:id/support", authMiddleware, authorizeRoles("citizen"), async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) return res.status(400).json({ success: false, message: "Invalid issue ID" });
     const issue = await Issue.findById(req.params.id);
 
     if (!issue) {
@@ -299,6 +306,20 @@ router.patch("/:id/support", authMiddleware, async (req, res) => {
     // Increase count
     issue.supportCount += 1;
 
+    // Reassess from stored verified location data. Supporting a report never
+    // causes another Gemini or Overpass request.
+    const updatedPriority = calculatePriority({
+      category: issue.category,
+      description: issue.description,
+      locationContext: issue.locationContext,
+      supportCount: issue.supportCount,
+      aiAssessment: { aiUnavailable: true },
+    });
+    issue.priority = updatedPriority.priority;
+    issue.priorityReason = updatedPriority.priorityReason;
+    issue.priorityReasons = updatedPriority.priorityReasons;
+    issue.priorityConfidence = updatedPriority.confidence;
+
     await issue.save();
 
     res.status(200).json({
@@ -315,134 +336,32 @@ router.patch("/:id/support", authMiddleware, async (req, res) => {
   }
 });
 
-router.post("/check-duplicates", authMiddleware, async (req, res) => {
+router.post("/check-duplicates", authMiddleware, authorizeRoles("citizen"), async (req, res) => {
   try {
-    const { latitude, longitude, category } = req.body;
+    const { title, description, category, latitude, longitude } = req.body;
+    const inputError = validateIssueInput({ title, description, category, latitude, longitude });
+    if (inputError) return res.status(400).json({ success: false, message: inputError });
 
-    const issues = await Issue.find({
+    const duplicates = await findPotentialDuplicates({
+      title,
+      description,
       category,
-      status: { $ne: "Resolved" },
-    });
-
-    const nearbyIssues = issues.filter((issue) => {
-      if (!issue.location) return false;
-
-      const distance = getDistance(
-        latitude,
-        longitude,
-        issue.location.latitude,
-        issue.location.longitude
-      );
-
-      return distance <= 10000;
+      latitude,
+      longitude,
     });
 
     res.json({
       success: true,
-      duplicates: nearbyIssues,
+      duplicates,
     });
 
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-});
-
-router.get("/assigned", authMiddleware, async (req, res) => {
-  try {
-
-    const issues = await Issue.find({
-      assignedTo: req.user.id,
-    })
-      .sort({ createdAt: -1 });
-
-    res.status(200).json({
-      success: true,
-      issues,
-    });
-
-  } catch (error) {
-
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-
-  }
-});
-
-router.patch("/:id/status", authMiddleware, async (req, res) => {
-  try {
-
-    const { status } = req.body;
-
-    const issue = await Issue.findById(req.params.id);
-
-    if (!issue) {
-      return res.status(404).json({
-        success: false,
-        message: "Issue not found",
-      });
-    }
-
-    issue.status = status;
-
-    await issue.save();
-
+    // Do NOT expose internal error details. Return empty duplicates
+    // so the frontend can proceed with complaint submission.
+    console.error("Duplicate check failed:", error.message);
     res.json({
       success: true,
-      issue,
-    });
-
-  } catch (error) {
-
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-
-  }
-});
-
-router.patch("/:id/resolve", authMiddleware, async (req, res) => {
-  try {
-    const { resolutionNote } = req.body;
-
-    const issue = await Issue.findById(req.params.id);
-
-    if (!issue) {
-      return res.status(404).json({
-        success: false,
-        message: "Issue not found",
-      });
-    }
-
-    issue.status = "Resolved";
-    issue.resolutionNote = resolutionNote;
-
-    await issue.save();
-
-    await Notification.create({
-      user: issue.reportedBy,
-      relatedIssue: issue._id,
-      title: "Complaint resolved",
-      message: `Your complaint \"${issue.title}\" has been resolved.`,
-      type: "resolved",
-    });
-
-    res.status(200).json({
-      success: true,
-      issue,
-    });
-
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      success: false,
-      message: error.message,
+      duplicates: [],
     });
   }
 });
@@ -451,6 +370,13 @@ router.patch("/:id/feedback", authMiddleware, async (req, res) => {
   try {
 
     const { rating, comment } = req.body;
+    if (!isValidObjectId(req.params.id)) return res.status(400).json({ success: false, message: "Invalid issue ID" });
+    if (!Number.isInteger(Number(rating)) || Number(rating) < 1 || Number(rating) > 5) {
+      return res.status(400).json({ success: false, message: "Rating must be an integer from 1 to 5" });
+    }
+    if (comment !== undefined && (typeof comment !== "string" || comment.length > 1000)) {
+      return res.status(400).json({ success: false, message: "Feedback comment must be at most 1000 characters" });
+    }
 
     const issue = await Issue.findById(req.params.id);
 
@@ -461,11 +387,8 @@ router.patch("/:id/feedback", authMiddleware, async (req, res) => {
       });
     }
 
-    if (issue.status !== "Resolved") {
-      return res.status(400).json({
-        success: false,
-        message: "Only resolved complaints can receive feedback.",
-      });
+    if (!canSubmitFeedback(req.user, issue)) {
+      return res.status(403).json({ success: false, message: "Only the reporting citizen can submit feedback for a resolved complaint." });
     }
 
     if (issue.feedback && issue.feedback.rating) {
