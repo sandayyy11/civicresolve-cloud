@@ -23,38 +23,36 @@ function HowItWorks() {
   ];
 
   return (
-    <section className="bg-gray-50 py-20">
-      <div className="max-w-6xl mx-auto px-6">
-
-        <h2 className="text-4xl font-bold text-center mb-4">
+    <section className="border-t border-gray-200 bg-gray-50 py-16">
+      <div className="mx-auto max-w-6xl px-6">
+        <h2 className="text-center text-2xl font-semibold tracking-tight text-gray-900">
           How CivicResolve Works
         </h2>
 
-        <p className="text-center text-gray-600 mb-12">
+        <p className="mt-2 text-center text-sm text-gray-600">
           Reporting civic issues is simple, transparent, and efficient.
         </p>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {steps.map((step) => (
             <div
               key={step.number}
-              className="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transition"
+              className="card p-6 text-center"
             >
-              <div className="w-14 h-14 mx-auto rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-primary-700 text-base font-semibold text-white">
                 {step.number}
               </div>
 
-              <h3 className="mt-6 text-xl font-semibold">
+              <h3 className="mt-5 text-base font-semibold text-gray-900">
                 {step.title}
               </h3>
 
-              <p className="mt-4 text-gray-600">
+              <p className="mt-2 text-sm leading-relaxed text-gray-600">
                 {step.description}
               </p>
             </div>
           ))}
         </div>
-
       </div>
     </section>
   );

@@ -68,20 +68,20 @@ function MyIssues() {
     <DashboardLayout>
       <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">My Issues</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="page-title">My Issues</h1>
+          <p className="page-subtitle">
             Review your complaints and share feedback for resolved cases.
           </p>
         </div>
       </div>
 
       {feedbackMessage && (
-        <div className="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+        <div className="mb-5 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
           {feedbackMessage}
         </div>
       )}
 
-      <div className="space-y-5">
+      <div className="space-y-4">
         {issues.map((issue) => {
           const hasFeedback = Boolean(issue.feedback?.rating);
           const isResolved = issue.status === "Resolved";
@@ -91,7 +91,7 @@ function MyIssues() {
             <div key={issue._id} className="space-y-4">
               <IssueCard issue={issue} />
 
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
+              <div className="card border-slate-200 bg-slate-50 p-5">
                 {isResolved ? (
                   hasFeedback ? (
                     <div>
@@ -122,7 +122,7 @@ function MyIssues() {
                             key={star}
                             type="button"
                             onClick={() => updateFeedbackDraft(issue._id, "rating", star)}
-                            className={`rounded-full border px-3 py-2 text-sm font-medium transition ${
+                            className={`rounded-md border px-3 py-2 text-sm font-medium transition ${
                               draft.rating === star
                                 ? "border-amber-400 bg-amber-100 text-amber-700"
                                 : "border-slate-300 bg-white text-slate-600 hover:border-amber-300 hover:text-amber-600"
@@ -138,7 +138,7 @@ function MyIssues() {
                         onChange={(e) => updateFeedbackDraft(issue._id, "comment", e.target.value)}
                         placeholder="Leave an optional comment"
                         rows={4}
-                        className="mt-4 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 outline-none ring-0 focus:border-green-500"
+                        className="textarea mt-4"
                       />
 
                       <div className="mt-4 flex items-center gap-3">
@@ -146,7 +146,7 @@ function MyIssues() {
                           type="button"
                           onClick={() => submitFeedback(issue._id)}
                           disabled={submittingId === issue._id}
-                          className="rounded-xl bg-green-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-green-300"
+                          className="btn-success"
                         >
                           {submittingId === issue._id ? "Submitting..." : "Submit Feedback"}
                         </button>

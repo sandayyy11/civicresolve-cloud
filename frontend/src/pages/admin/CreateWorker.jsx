@@ -70,40 +70,35 @@ function CreateWorker() {
       <div className="mx-auto max-w-3xl">
         <Link
           to="/admin/dashboard"
-          className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-blue-600 transition hover:text-blue-700"
+          className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-primary-600 transition hover:text-primary-700"
         >
           <FaArrowLeft />
           Back to Dashboard
         </Link>
 
-        <div className="rounded-2xl bg-white p-6 shadow-md sm:p-8">
-          <div className="mb-8 flex items-start gap-4">
-            <div className="rounded-xl bg-blue-100 p-3 text-blue-600">
-              <FaUserPlus size={24} />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800">Create Worker</h1>
-              <p className="mt-2 text-gray-500">
-                Add a municipal worker to receive and manage assigned complaints.
-              </p>
-            </div>
+        <div className="card p-6 sm:p-8">
+          <div className="mb-8">
+            <h1 className="page-title">Create Worker</h1>
+            <p className="page-subtitle">
+              Add a municipal worker to receive and manage assigned complaints.
+            </p>
           </div>
 
           {error && (
-            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
             </div>
           )}
 
           {successMessage && (
-            <div className="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            <div className="mb-6 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
               {successMessage}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="name" className="mb-2 block text-sm font-semibold text-gray-700">
+              <label htmlFor="name" className="label">
                 Worker Name
               </label>
               <input
@@ -113,13 +108,13 @@ function CreateWorker() {
                 value={form.name}
                 onChange={handleChange}
                 autoComplete="name"
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="input"
                 placeholder="Enter worker name"
               />
             </div>
 
             <div>
-              <label htmlFor="email" className="mb-2 block text-sm font-semibold text-gray-700">
+              <label htmlFor="email" className="label">
                 Email
               </label>
               <input
@@ -129,13 +124,13 @@ function CreateWorker() {
                 value={form.email}
                 onChange={handleChange}
                 autoComplete="email"
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="input"
                 placeholder="worker@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="specialization" className="mb-2 block text-sm font-semibold text-gray-700">
+              <label htmlFor="specialization" className="label">
                 Specialization
               </label>
               <select
@@ -143,7 +138,7 @@ function CreateWorker() {
                 name="specialization"
                 value={form.specialization}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="input"
               >
                 <option value="Road">Road</option>
                 <option value="Garbage">Garbage</option>
@@ -155,7 +150,7 @@ function CreateWorker() {
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div>
-                <label htmlFor="password" className="mb-2 block text-sm font-semibold text-gray-700">
+                <label htmlFor="password" className="label">
                   Password
                 </label>
                 <input
@@ -165,13 +160,13 @@ function CreateWorker() {
                   value={form.password}
                   onChange={handleChange}
                   autoComplete="new-password"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className="input"
                   placeholder="Create a password"
                 />
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="mb-2 block text-sm font-semibold text-gray-700">
+                <label htmlFor="confirmPassword" className="label">
                   Confirm Password
                 </label>
                 <input
@@ -181,7 +176,7 @@ function CreateWorker() {
                   value={form.confirmPassword}
                   onChange={handleChange}
                   autoComplete="new-password"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className="input"
                   placeholder="Confirm password"
                 />
               </div>
@@ -190,14 +185,14 @@ function CreateWorker() {
             <div className="flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:justify-end">
               <Link
                 to="/admin/dashboard"
-                className="rounded-xl border border-gray-300 px-5 py-3 text-center font-medium text-gray-700 transition hover:bg-gray-50"
+                className="btn-secondary"
               >
                 Cancel
               </Link>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="btn-primary"
               >
                 <FaUserPlus />
                 {isSubmitting ? "Creating Worker..." : "Create Worker"}

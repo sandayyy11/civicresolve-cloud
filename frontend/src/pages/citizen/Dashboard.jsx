@@ -5,14 +5,7 @@ import DashboardLayout from "../../components/layout/DashboardLayout";
 import StatCard from "../../components/ui/StatCard";
 import IssueCard from "../../components/ui/IssueCard";
 import { Link } from "react-router-dom";
-import { FaPlus } from "react-icons/fa";
-
-import {
-  FaClipboardList,
-  FaClock,
-  FaSpinner,
-  FaCheckCircle,
-} from "react-icons/fa";
+import { FaPlus, FaClipboardList, FaClock, FaSpinner, FaCheckCircle } from "react-icons/fa";
 
 function Dashboard() {
   const { user } = useAuth();
@@ -35,17 +28,9 @@ function Dashboard() {
     }
   };
 
-  const pending = issues.filter(
-    (issue) => issue.status === "Pending"
-  ).length;
-
-  const progress = issues.filter(
-    (issue) => issue.status === "In Progress"
-  ).length;
-
-  const resolved = issues.filter(
-    (issue) => issue.status === "Resolved"
-  ).length;
+  const pending = issues.filter((issue) => issue.status === "Pending").length;
+  const progress = issues.filter((issue) => issue.status === "In Progress").length;
+  const resolved = issues.filter((issue) => issue.status === "Resolved").length;
 
   return (
     <DashboardLayout>
@@ -53,76 +38,65 @@ function Dashboard() {
         <p className="text-center mt-10 text-lg">Loading...</p>
       ) : (
         <>
-          {/* Dashboard Header */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="page-title">Welcome back, {user?.name || "Citizen"}!</h1>
+              <p className="page-subtitle">
+                Here's what's happening with your complaints.
+              </p>
+            </div>
 
-  <div>
-    <h2 className="text-3xl font-bold">
-      Dashboard Overview
-    </h2>
+            <Link to="/report" className="btn-primary mt-4 md:mt-0 shadow-md shadow-primary-600/25">
+              <FaPlus size={14} />
+              Report an Issue
+            </Link>
+          </div>
 
-    <p className="text-gray-500 mt-2">
-      Here's a summary of your complaints.
-    </p>
-  </div>
-
-  <Link
-    to="/report"
-    className="mt-5 md:mt-0 inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl shadow-md transition"
-  >
-    <FaPlus />
-    Report New Issue
-  </Link>
-
-</div>
-
-          {/* Statistics Cards */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+          {/* KPI cards */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
             <StatCard
-              title="Total Issues"
+              title="My Complaints"
               value={issues.length}
               icon={<FaClipboardList />}
               color="blue"
+              supportingText="Total reported issues"
             />
-
             <StatCard
               title="Pending"
               value={pending}
               icon={<FaClock />}
               color="yellow"
+              supportingText="Awaiting action"
             />
-
             <StatCard
               title="In Progress"
               value={progress}
               icon={<FaSpinner />}
-              color="blue"
+              color="indigo"
+              supportingText="Being addressed"
             />
-
             <StatCard
               title="Resolved"
               value={resolved}
               icon={<FaCheckCircle />}
               color="green"
+              supportingText="Successfully closed"
             />
           </div>
 
           {/* Recent Issues */}
-          <h2 className="text-2xl font-bold mt-10 mb-5">
-            Recent Issues
+          <h2 className="mt-8 mb-4 text-base font-semibold text-slate-900">
+            Recent Complaints
           </h2>
 
-          <div className="space-y-5">
+          <div className="space-y-4">
             {issues.length === 0 ? (
-              <div className="bg-white rounded-2xl shadow-md p-8 text-center text-gray-500">
+              <div className="card p-8 text-center text-slate-500">
                 No issues reported yet.
               </div>
             ) : (
               issues.map((issue) => (
-                <IssueCard
-    key={issue._id}
-    issue={issue}
-  />
+                <IssueCard key={issue._id} issue={issue} />
               ))
             )}
           </div>

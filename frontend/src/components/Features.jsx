@@ -19,35 +19,29 @@ function Features() {
   ];
 
   return (
-    <section className="py-20 bg-white">
+    <section className="bg-white py-16">
+      <div className="mx-auto max-w-6xl px-6">
+        <h2 className="text-center text-2xl font-semibold tracking-tight text-gray-900">
+          Features
+        </h2>
 
-      <h2 className="text-4xl font-bold text-center mb-12">
-        Features
-      </h2>
+        <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {features.map((feature, index) => (
+            <div
+              key={index}
+              className="card p-6"
+            >
+              <h3 className="text-base font-semibold text-gray-900">
+                {feature.title}
+              </h3>
 
-      <div className="max-w-6xl mx-auto grid md:grid-cols-2 lg:grid-cols-4 gap-8 px-6">
-
-        {features.map((feature, index) => (
-
-          <div
-            key={index}
-            className="shadow-lg rounded-xl p-6 hover:shadow-2xl transition"
-          >
-
-            <h3 className="text-xl font-semibold mb-4">
-              {feature.title}
-            </h3>
-
-            <p className="text-gray-600">
-              {feature.description}
-            </p>
-
-          </div>
-
-        ))}
-
+              <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                {feature.description}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
-
     </section>
   );
 }

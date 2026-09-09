@@ -1,18 +1,16 @@
 function PriorityBadge({ priority }) {
-  let styles = "bg-gray-100 text-gray-700";
+  let styles = "badge-neutral";
 
   if (priority === "High") {
-    styles = "bg-red-100 text-red-700";
+    styles = "badge-high";
   } else if (priority === "Medium") {
-    styles = "bg-yellow-100 text-yellow-700";
+    styles = "badge-medium";
   } else if (priority === "Low") {
-    styles = "bg-green-100 text-green-700";
+    styles = "badge-low";
   }
 
   return (
-    <span
-      className={`px-3 py-1 rounded-full text-sm font-semibold ${styles}`}
-    >
+    <span className={styles}>
       {priority || "N/A"}
     </span>
   );

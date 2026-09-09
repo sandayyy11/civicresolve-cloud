@@ -9,388 +9,342 @@ import api from "../services/api";
 import { useNavigate } from "react-router-dom";
 import DuplicateComplaintModal from "../components/modals/DuplicateComplaintModal";
 
-
 function ReportIssue() {
   const [title, setTitle] = useState("");
-const [category, setCategory] = useState("Road");
-const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("Road");
+  const [description, setDescription] = useState("");
 
-const [latitude, setLatitude] = useState("");
-const [longitude, setLongitude] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
 
-const [image, setImage] = useState(null);
-const [preview, setPreview] = useState("");
-const [loading, setLoading] = useState(false);
-const [duplicates, setDuplicates] = useState([]);
-const [showDuplicates, setShowDuplicates] = useState(false);
-const [pendingSubmission, setPendingSubmission] = useState(false);
-const fileInputRef = useRef(null);
-const navigate = useNavigate();
-const [aiSummary, setAiSummary] = useState("");
-const [aiPriority, setAiPriority] = useState("");
-const [submitting, setSubmitting] = useState(false);
+  const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [duplicates, setDuplicates] = useState([]);
+  const [showDuplicates, setShowDuplicates] = useState(false);
+  const [pendingSubmission, setPendingSubmission] = useState(false);
+  const fileInputRef = useRef(null);
+  const navigate = useNavigate();
+  const [aiSummary, setAiSummary] = useState("");
+  const [aiPriority, setAiPriority] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-
-const detectLocation = () => {
-  if (!navigator.geolocation) {
-    alert("Geolocation is not supported.");
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      setLatitude(position.coords.latitude);
-      setLongitude(position.coords.longitude);
-    },
-    () => {
-      alert("Unable to fetch location.");
-    }
-  );
-};
-
-const checkDuplicates = async () => {
-  try {
-    const response = await api.post("/issues/check-duplicates", {
-      latitude,
-      longitude,
-      category,
-    });
-
-    if (response.data.duplicates.length > 0) {
-      setDuplicates(response.data.duplicates);
-      setShowDuplicates(true);
-      setPendingSubmission(true);
-
-      return true;
+  const detectLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported.");
+      return;
     }
 
-    return false;
-
-  } catch (error) {
-    console.error(error);
-    return false;
-  }
-};
-
-const submitIssue = async () => {
-  try {
-    setSubmitting(true);
-
-    const formData = new FormData();
-
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("latitude", latitude);
-    formData.append("longitude", longitude);
-
-    if (image) {
-      formData.append("image", image);
-    }
-
-    const response = await api.post("/issues", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLatitude(position.coords.latitude);
+        setLongitude(position.coords.longitude);
       },
-    });
-
-    setAiSummary(response.data.issue.summary);
-    setAiPriority(response.data.issue.priority);
-
-    alert("Issue reported successfully!");
-
-    setTimeout(() => {
-      navigate("/citizen/dashboard");
-    }, 1500);
-
-  } catch (error) {
-    alert(
-      error.response?.data?.message ||
-      "Something went wrong."
+      () => {
+        alert("Unable to fetch location.");
+      }
     );
-  } finally {
-    setSubmitting(false);
-  }
-};
+  };
 
-const handleImageChange = (e) => {
-  const file = e.target.files[0];
+  const checkDuplicates = async () => {
+    try {
+      const response = await api.post("/issues/check-duplicates", {
+        title,
+        description,
+        category,
+        latitude,
+        longitude,
+      });
 
-  if (!file) return;
+      if (response.data.duplicates.length > 0) {
+        setDuplicates(response.data.duplicates);
+        setShowDuplicates(true);
+        setPendingSubmission(true);
 
-  setImage(file);
+        return true;
+      }
 
-  const imageURL = URL.createObjectURL(file);
+      return false;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  };
 
-  setPreview(imageURL);
-};
+  const submitIssue = async () => {
+    try {
+      setSubmitting(true);
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+      const formData = new FormData();
 
-  if (!title || !description) {
-    alert("Please complete all required fields.");
-    return;
-  }
+      formData.append("title", title);
+      formData.append("description", description);
+      formData.append("latitude", latitude);
+      formData.append("longitude", longitude);
 
-  const duplicateFound = await checkDuplicates();
+      if (image) {
+        formData.append("image", image);
+      }
 
-  if (!duplicateFound) {
-    submitIssue();
-  }
-};
+      const response = await api.post("/issues", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      setAiSummary(response.data.issue.summary);
+      setAiPriority(response.data.issue.priority);
+
+      if (response.data.aiUnavailable) {
+        alert(
+          "Complaint submitted successfully.\n\nAI-assisted analysis is temporarily unavailable, so priority was determined using CivicResolve's built-in safety and location rules."
+        );
+      } else {
+        alert("Complaint submitted successfully.");
+      }
+
+      setTimeout(() => {
+        navigate("/citizen/dashboard");
+      }, 1500);
+    } catch (error) {
+      // Show a clean user-friendly message, never raw API/Gemini errors.
+      alert("We couldn't submit your complaint. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    setImage(file);
+
+    const imageURL = URL.createObjectURL(file);
+
+    setPreview(imageURL);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!title || !description) {
+      alert("Please complete all required fields.");
+      return;
+    }
+
+    const duplicateFound = await checkDuplicates();
+
+    if (!duplicateFound) {
+      submitIssue();
+    }
+  };
 
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto">
-
-        <div className="flex justify-between items-center mb-8">
-
-          <div>
-
-            <h1 className="text-4xl font-bold">
-              Report New Issue
-            </h1>
-
-            <p className="text-gray-500 mt-2">
-              Help improve your community by reporting civic problems.
-            </p>
-
-          </div>
-
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-6">
+          <h1 className="page-title">Report New Issue</h1>
+          <p className="page-subtitle">
+            Help improve your community by reporting civic problems.
+          </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-md p-8">
-
-          <div className="space-y-7">
-
+        <form onSubmit={handleSubmit} className="card p-6 sm:p-8">
+          <div className="space-y-6">
             {/* Title */}
-
             <div>
-
-              <label className="block font-semibold mb-2">
+              <label htmlFor="title" className="label">
                 Issue Title
               </label>
-
               <input
+                id="title"
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Example: Huge pothole near CMR"
-                className="w-full border rounded-xl p-4 focus:ring-2 focus:ring-blue-500 outline-none"
+                className="input"
               />
-
             </div>
 
             {/* Category */}
-
             <div>
-
-              <label className="block font-semibold mb-2">
+              <label htmlFor="category" className="label">
                 Category
               </label>
-
               <select
+                id="category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full border rounded-xl p-4"
+                className="input"
               >
-
                 <option>Road</option>
                 <option>Garbage</option>
                 <option>Electricity</option>
                 <option>Water</option>
                 <option>Other</option>
-
               </select>
-
             </div>
 
             {/* Description */}
-
             <div>
-
-              <label className="block font-semibold mb-2">
+              <label htmlFor="description" className="label">
                 Description
               </label>
-
               <textarea
+                id="description"
                 rows="5"
                 value={description}
-                onChange={(e) =>
-                  setDescription(e.target.value)
-                }
+                onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe the issue..."
-                className="w-full border rounded-xl p-4 resize-none"
+                className="textarea"
               />
-
             </div>
 
             {/* Image */}
+            <div>
+              <label className="label">
+                Upload Image
+              </label>
 
-<div>
+              <div className="rounded-md border-2 border-dashed border-gray-300 p-8 text-center">
+                {preview ? (
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    className="mx-auto max-h-72 rounded-md object-cover"
+                  />
+                ) : (
+                  <>
+                    <FaCamera
+                      className="mx-auto text-gray-400"
+                      size={36}
+                    />
 
-  <label className="block font-semibold mb-3">
-    Upload Image
-  </label>
+                    <p className="mt-3 text-sm text-gray-500">
+                      Choose an image to upload
+                    </p>
+                  </>
+                )}
 
-  <div className="border-2 border-dashed rounded-2xl p-10 text-center">
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={handleImageChange}
+                  hidden
+                />
 
-    {preview ? (
-      <img
-        src={preview}
-        alt="Preview"
-        className="mx-auto rounded-xl max-h-72 object-cover"
-      />
-    ) : (
-      <>
-        <FaCamera
-          className="mx-auto text-blue-600"
-          size={42}
-        />
-
-        <p className="mt-4 text-gray-500">
-          Choose an image to upload
-        </p>
-      </>
-    )}
-
-    <input
-      type="file"
-      accept="image/*"
-      ref={fileInputRef}
-      onChange={handleImageChange}
-      hidden
-    />
-
-    <button
-      type="button"
-      onClick={() => fileInputRef.current.click()}
-      className="mt-5 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl"
-    >
-      {preview ? "Change Image" : "Choose Image"}
-    </button>
-
-  </div>
-
-</div>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current.click()}
+                  className="btn-secondary mt-4"
+                >
+                  {preview ? "Change Image" : "Choose Image"}
+                </button>
+              </div>
+            </div>
 
             {/* Location */}
-
             <div>
-
-              <label className="block font-semibold mb-3">
+              <label className="label">
                 Location
               </label>
 
               <button
-  type="button"
-  onClick={detectLocation}
-  className="flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl"
->
-  <FaMapMarkerAlt />
-  Detect My Location
-</button>
+                type="button"
+                onClick={detectLocation}
+                className="btn-secondary"
+              >
+                <FaMapMarkerAlt />
+                Detect My Location
+              </button>
 
-{latitude && (
-  <div className="mt-4 bg-gray-50 rounded-xl p-4">
-
-    <p>
-      <strong>Latitude:</strong> {latitude}
-    </p>
-
-    <p>
-      <strong>Longitude:</strong> {longitude}
-    </p>
-
-  </div>
-)}
-
+              {latitude && (
+                <div className="mt-3 rounded-md bg-gray-50 p-4 text-sm">
+                  <p>
+                    <strong>Latitude:</strong> {latitude}
+                  </p>
+                  <p>
+                    <strong>Longitude:</strong> {longitude}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* AI Preview */}
-
-            <div className="bg-blue-50 rounded-2xl p-6">
-
-              <h2 className="font-bold text-xl mb-4">
-                🤖 AI Preview
+            <div className="rounded-md border border-primary-100 bg-primary-50 p-5">
+              <h2 className="text-sm font-semibold text-gray-900">
+                AI Preview
               </h2>
 
               {aiSummary ? (
-  <>
+                <>
+                  <p className="mt-3 text-sm">
+                    <strong>Summary:</strong>
+                  </p>
+                  <p className="mb-3 text-sm">
+                    {aiSummary}
+                  </p>
 
-    <p>
-      <strong>Summary:</strong>
-    </p>
-
-    <p className="mb-4">
-      {aiSummary}
-    </p>
-
-    <p>
-      <strong>Priority:</strong>
-    </p>
-
-    <p className="text-red-600 font-bold">
-      {aiPriority}
-    </p>
-
-  </>
-) : (
-  <p className="text-gray-500">
-    AI summary and priority will appear here after submission.
-  </p>
-)}
-
+                  <p className="text-sm">
+                    <strong>Priority:</strong>
+                  </p>
+                  <p className="text-sm font-semibold text-red-600">
+                    {aiPriority}
+                  </p>
+                </>
+              ) : (
+                <p className="mt-2 text-sm text-gray-500">
+                  AI summary and priority will appear here after submission.
+                </p>
+              )}
             </div>
 
             {/* Submit */}
-
             <button
-  onClick={handleSubmit}
-  disabled={submitting}
-  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl flex justify-center items-center gap-3 text-lg font-semibold disabled:opacity-50"
->
-  <FaPaperPlane />
-
-  {submitting ? "Submitting..." : "Submit Issue"}
-</button>
-
+              type="submit"
+              disabled={submitting}
+              className="btn-primary w-full py-3"
+            >
+              <FaPaperPlane />
+              {submitting ? "Submitting..." : "Submit Issue"}
+            </button>
           </div>
-
-        </div>
-
+        </form>
       </div>
+
       <DuplicateComplaintModal
-  isOpen={showDuplicates}
-  duplicates={duplicates}
-  onClose={() => {
-    setShowDuplicates(false);
-    setPendingSubmission(false);
-  }}
-  onSupport={async (issueId) => {
-    try {
-      await api.patch(`/issues/${issueId}/support`);
+        isOpen={showDuplicates}
+        duplicates={duplicates}
+        onClose={() => {
+          setShowDuplicates(false);
+          setPendingSubmission(false);
+        }}
+        onSupport={async (issueId) => {
+          try {
+            await api.patch(`/issues/${issueId}/support`);
 
-      alert("Complaint supported successfully!");
+            alert("Complaint supported successfully!");
 
-      setShowDuplicates(false);
-      setPendingSubmission(false);
+            setShowDuplicates(false);
+            setPendingSubmission(false);
 
-      navigate("/citizen/dashboard");
-
-    } catch (error) {
-      alert(
-        error.response?.data?.message ||
-        "Failed to support complaint."
-      );
-    }
-  }}
-  onReportAnyway={() => {
-    setShowDuplicates(false);
-    setPendingSubmission(false);
-    submitIssue();
-  }}
-/>
+            navigate("/citizen/dashboard");
+          } catch (error) {
+            alert(
+              error.response?.data?.message ||
+              "Failed to support complaint."
+            );
+          }
+        }}
+        onReportAnyway={() => {
+          setShowDuplicates(false);
+          setPendingSubmission(false);
+          submitIssue();
+        }}
+      />
     </DashboardLayout>
   );
 }

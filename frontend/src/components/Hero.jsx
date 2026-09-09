@@ -1,35 +1,38 @@
 import { ArrowRight, MapPinned } from "lucide-react";
+import { Link } from "react-router-dom";
 
 function Hero() {
   return (
-    <section className="bg-gradient-to-br from-blue-50 via-white to-indigo-100 py-24">
-      <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
-
+    <section className="border-b border-gray-200 bg-gray-50 py-16">
+      <div className="mx-auto grid max-w-7xl items-center gap-12 px-6 lg:grid-cols-2">
         {/* Left Side */}
         <div>
-          <span className="inline-block bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium">
-            AI + AWS Powered Smart Civic Platform
+          <span className="inline-block rounded-full bg-primary-50 px-3.5 py-1.5 text-xs font-medium text-primary-700 ring-1 ring-inset ring-primary-200">
+            AI-Assisted Civic Grievance Platform
           </span>
 
-          <h1 className="text-5xl font-extrabold text-gray-900 mt-6 leading-tight">
+          <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight text-gray-900">
             Report Civic Issues
             <br />
             Smarter & Faster
           </h1>
 
-          <p className="mt-6 text-lg text-gray-600">
+          <p className="mt-4 text-base leading-relaxed text-gray-600">
             CivicResolve enables citizens to report potholes, garbage,
             water leaks, and other civic issues with AI-powered
             categorization and real-time tracking.
           </p>
 
-          <div className="mt-8 flex gap-4">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 transition">
+          <div className="mt-7 flex gap-3">
+            <Link
+              to="/register"
+              className="btn-primary"
+            >
               Report Issue
-              <ArrowRight size={20} />
-            </button>
+              <ArrowRight size={18} />
+            </Link>
 
-            <button className="border border-blue-600 text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-xl transition">
+            <button className="btn-secondary">
               Learn More
             </button>
           </div>
@@ -37,25 +40,24 @@ function Hero() {
 
         {/* Right Side */}
         <div className="flex justify-center">
-          <div className="bg-white rounded-3xl shadow-xl p-10 w-80">
+          <div className="card w-80 p-8">
+            <div className="flex h-14 w-14 items-center justify-center rounded-md bg-primary-50">
+              <MapPinned
+                size={28}
+                className="text-primary-700"
+              />
+            </div>
 
-            <MapPinned
-              size={70}
-              className="text-blue-600 mx-auto"
-            />
-
-            <h3 className="text-2xl font-bold text-center mt-6">
+            <h3 className="mt-5 text-lg font-semibold text-gray-900">
               Smart Reporting
             </h3>
 
-            <p className="text-gray-600 text-center mt-4">
+            <p className="mt-2 text-sm leading-relaxed text-gray-600">
               AI identifies issue types and routes complaints to the
               correct department automatically.
             </p>
-
           </div>
         </div>
-
       </div>
     </section>
   );

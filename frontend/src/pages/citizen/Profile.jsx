@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import api from "../../services/api";
+import { UserCircle2, Edit3, Save, X } from "lucide-react";
 
 function Profile() {
   const [profile, setProfile] = useState(null);
@@ -98,13 +99,13 @@ function Profile() {
         <img
           src={image}
           alt="Profile"
-          className="h-24 w-24 rounded-full object-cover border-4 border-white shadow-md"
+          className="h-20 w-20 rounded-full border-2 border-white object-cover shadow-md"
         />
       );
     }
 
     return (
-      <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-blue-500 to-indigo-600 text-2xl font-bold text-white shadow-md">
+      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-600 text-2xl font-bold text-white shadow-md">
         {(profile?.name || formData.name || "U")
           .split(" ")
           .map((part) => part[0])
@@ -117,201 +118,198 @@ function Profile() {
 
   return (
     <DashboardLayout>
-      <div className="rounded-3xl bg-gradient-to-br from-blue-50 via-white to-indigo-100 p-6 shadow-sm sm:p-8">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">
-              Citizen Profile
-            </p>
-            <h1 className="mt-2 text-3xl font-bold text-gray-900">
-              My Profile
-            </h1>
-            <p className="mt-2 text-sm text-gray-600">
-              Keep your contact details up to date for faster service.
-            </p>
-          </div>
-
-          <button
-            onClick={() => {
-              setEditing((prev) => !prev);
-              setMessage({ type: "", text: "" });
-            }}
-            className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
-          >
-            {editing ? "Cancel Edit" : "Edit Profile"}
-          </button>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="page-title">My Profile</h1>
+          <p className="page-subtitle">
+            Keep your contact details up to date for faster service.
+          </p>
         </div>
 
-        {message.text ? (
-          <div
-            className={`mb-6 rounded-2xl border px-4 py-3 text-sm ${
-              message.type === "success"
-                ? "border-green-200 bg-green-50 text-green-700"
-                : "border-red-200 bg-red-50 text-red-700"
-            }`}
-          >
-            {message.text}
-          </div>
-        ) : null}
-
-        {loading ? (
-          <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
-            <p className="text-gray-600">Loading your profile...</p>
-          </div>
-        ) : (
-          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="rounded-3xl bg-white p-6 shadow-sm">
-              <div className="flex flex-col items-center gap-4 border-b border-gray-100 pb-6 sm:flex-row sm:items-start">
-                <div className="rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 p-2">
-                  {renderAvatar()}
-                </div>
-
-                <div className="text-center sm:text-left">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {profile?.name || "Your Name"}
-                  </h2>
-                  <p className="mt-1 text-sm text-gray-600">{profile?.email}</p>
-                  <div className="mt-3 inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
-                    Citizen Member
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl bg-gray-50 p-4">
-                  <p className="text-sm font-medium text-gray-500">Phone</p>
-                  <p className="mt-1 font-semibold text-gray-900">
-                    {profile?.phone || "Not provided"}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl bg-gray-50 p-4">
-                  <p className="text-sm font-medium text-gray-500">Address</p>
-                  <p className="mt-1 font-semibold text-gray-900">
-                    {profile?.address || "Not provided"}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl bg-gray-50 p-4 sm:col-span-2">
-                  <p className="text-sm font-medium text-gray-500">Member Since</p>
-                  <p className="mt-1 font-semibold text-gray-900">
-                    {formatDate(profile?.createdAt)}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-3xl bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {editing ? "Edit Profile" : "Profile Details"}
-              </h3>
-              <p className="mt-2 text-sm text-gray-600">
-                {editing
-                  ? "Update your personal details below."
-                  : "Your current public profile information is shown here."}
-              </p>
-
-              <form onSubmit={handleSave} className="mt-6 space-y-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Name
-                  </label>
-                  {editing ? (
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-blue-500"
-                    />
-                  ) : (
-                    <div className="rounded-xl bg-gray-50 px-4 py-3 text-gray-800">
-                      {profile?.name || "Not provided"}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Email
-                  </label>
-                  <div className="rounded-xl bg-gray-100 px-4 py-3 text-gray-600">
-                    {profile?.email || "Not provided"}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Phone
-                  </label>
-                  {editing ? (
-                    <input
-                      type="text"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-blue-500"
-                    />
-                  ) : (
-                    <div className="rounded-xl bg-gray-50 px-4 py-3 text-gray-800">
-                      {profile?.phone || "Not provided"}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Address
-                  </label>
-                  {editing ? (
-                    <textarea
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      rows="3"
-                      className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-blue-500"
-                    />
-                  ) : (
-                    <div className="rounded-xl bg-gray-50 px-4 py-3 text-gray-800">
-                      {profile?.address || "Not provided"}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Profile Image URL
-                  </label>
-                  {editing ? (
-                    <input
-                      type="text"
-                      name="profileImage"
-                      value={formData.profileImage}
-                      onChange={handleChange}
-                      placeholder="https://example.com/avatar.jpg"
-                      className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-blue-500"
-                    />
-                  ) : (
-                    <div className="rounded-xl bg-gray-50 px-4 py-3 text-gray-800">
-                      {profile?.profileImage ? profile.profileImage : "Not provided"}
-                    </div>
-                  )}
-                </div>
-
-                {editing ? (
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="w-full rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
-                  >
-                    {saving ? "Saving..." : "Save Changes"}
-                  </button>
-                ) : null}
-              </form>
-            </div>
-          </div>
-        )}
+        <button
+          onClick={() => {
+            setEditing((prev) => !prev);
+            setMessage({ type: "", text: "" });
+          }}
+          className={editing ? "btn-secondary" : "btn-primary"}
+        >
+          {editing ? (
+            <>
+              <X size={16} /> Cancel Edit
+            </>
+          ) : (
+            <>
+              <Edit3 size={16} /> Edit Profile
+            </>
+          )}
+        </button>
       </div>
+
+      {message.text ? (
+        <div
+          className={`mb-6 rounded-lg border px-4 py-3 text-sm ${
+            message.type === "success"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : "border-red-200 bg-red-50 text-red-600"
+          }`}
+        >
+          {message.text}
+        </div>
+      ) : null}
+
+      {loading ? (
+        <div className="card p-8 text-center">
+          <p className="text-slate-500">Loading your profile...</p>
+        </div>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          {/* Profile card */}
+          <div className="card p-6">
+            <div className="flex flex-col items-center gap-4 border-b border-slate-100 pb-6 sm:flex-row sm:items-start">
+              <div className="rounded-full bg-primary-50 p-1 ring-4 ring-primary-50">
+                {renderAvatar()}
+              </div>
+
+              <div className="text-center sm:text-left">
+                <h2 className="text-xl font-semibold text-slate-900">
+                  {profile?.name || "Your Name"}
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  {profile?.email}
+                </p>
+                <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-700 ring-1 ring-inset ring-primary-200">
+                  <UserCircle2 size={14} />
+                  Citizen Member
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-lg bg-slate-50 p-4">
+                <p className="text-xs font-medium text-slate-500">Phone</p>
+                <p className="mt-1 font-semibold text-slate-900">
+                  {profile?.phone || "Not provided"}
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-slate-50 p-4">
+                <p className="text-xs font-medium text-slate-500">Address</p>
+                <p className="mt-1 font-semibold text-slate-900">
+                  {profile?.address || "Not provided"}
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-slate-50 p-4 sm:col-span-2">
+                <p className="text-xs font-medium text-slate-500">Member Since</p>
+                <p className="mt-1 font-semibold text-slate-900">
+                  {formatDate(profile?.createdAt)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Details / Edit form */}
+          <div className="card p-6">
+            <h3 className="text-base font-semibold text-slate-900">
+              {editing ? "Edit Profile" : "Profile Details"}
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">
+              {editing
+                ? "Update your personal details below."
+                : "Your current public profile information is shown here."}
+            </p>
+
+            <form onSubmit={handleSave} className="mt-5 space-y-4">
+              <div>
+                <label className="label">Name</label>
+                {editing ? (
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="input"
+                  />
+                ) : (
+                  <div className="rounded-lg bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800">
+                    {profile?.name || "Not provided"}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="label">Email</label>
+                <div className="rounded-lg bg-slate-100 px-3.5 py-2.5 text-sm text-slate-600">
+                  {profile?.email || "Not provided"}
+                </div>
+              </div>
+
+              <div>
+                <label className="label">Phone</label>
+                {editing ? (
+                  <input
+                    type="text"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="input"
+                  />
+                ) : (
+                  <div className="rounded-lg bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800">
+                    {profile?.phone || "Not provided"}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="label">Address</label>
+                {editing ? (
+                  <textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    rows="3"
+                    className="textarea"
+                  />
+                ) : (
+                  <div className="rounded-lg bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800">
+                    {profile?.address || "Not provided"}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="label">Profile Image URL</label>
+                {editing ? (
+                  <input
+                    type="text"
+                    name="profileImage"
+                    value={formData.profileImage}
+                    onChange={handleChange}
+                    placeholder="https://example.com/avatar.jpg"
+                    className="input"
+                  />
+                ) : (
+                  <div className="rounded-lg bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800">
+                    {profile?.profileImage ? profile.profileImage : "Not provided"}
+                  </div>
+                )}
+              </div>
+
+              {editing ? (
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="btn-primary w-full"
+                >
+                  <Save size={16} />
+                  {saving ? "Saving..." : "Save Changes"}
+                </button>
+              ) : null}
+            </form>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

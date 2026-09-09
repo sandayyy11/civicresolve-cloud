@@ -1,22 +1,26 @@
+import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 
 function DashboardLayout({ children }) {
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
   return (
-    <div className="flex bg-gray-100 min-h-screen">
+    <div className="min-h-screen bg-surface">
+      <Sidebar
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+      />
 
-      <Sidebar />
+      <div className="flex min-h-screen flex-col lg:pl-64">
+        <Navbar onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)} />
 
-      <div className="ml-64 flex-1">
-
-        <Navbar />
-
-        <main className="p-8">
-          {children}
+        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            {children}
+          </div>
         </main>
-
       </div>
-
     </div>
   );
 }

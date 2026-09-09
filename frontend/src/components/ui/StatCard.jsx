@@ -2,52 +2,55 @@ import React from "react";
 
 const colorStyles = {
   blue: {
-    bg: "bg-blue-50",
-    border: "border-blue-200",
-    text: "text-blue-600",
+    icon: "text-primary-600",
+    iconBg: "bg-primary-50",
+    accent: "bg-primary-600",
   },
   yellow: {
-    bg: "bg-yellow-50",
-    border: "border-yellow-200",
-    text: "text-yellow-600",
+    icon: "text-amber-500",
+    iconBg: "bg-amber-50",
+    accent: "bg-amber-500",
   },
   green: {
-    bg: "bg-green-50",
-    border: "border-green-200",
-    text: "text-green-600",
+    icon: "text-emerald-500",
+    iconBg: "bg-emerald-50",
+    accent: "bg-emerald-500",
   },
   red: {
-    bg: "bg-red-50",
-    border: "border-red-200",
-    text: "text-red-600",
+    icon: "text-red-500",
+    iconBg: "bg-red-50",
+    accent: "bg-red-500",
+  },
+  indigo: {
+    icon: "text-indigo-500",
+    iconBg: "bg-indigo-50",
+    accent: "bg-indigo-500",
   },
 };
 
-function StatCard({ title, value, icon, color = "blue" }) {
-  const styles = colorStyles[color];
+function StatCard({ title, value, icon, color = "blue", supportingText }) {
+  const styles = colorStyles[color] || colorStyles.blue;
 
   return (
-    <div
-      className={`${styles.bg} ${styles.border} border rounded-2xl shadow-md p-6 hover:shadow-xl hover:-translate-y-1 transition duration-300`}
-    >
-      <div className="flex justify-between items-center">
+    <div className="card relative overflow-hidden p-5">
+      <div className={`absolute inset-x-0 top-0 h-0.5 ${styles.accent}`} />
 
+      <div className="flex items-start justify-between">
         <div>
-
-          <p className="text-gray-500 font-medium">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
             {title}
           </p>
-
-          <h2 className="text-4xl font-bold mt-3">
+          <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
             {value}
-          </h2>
-
+          </p>
+          {supportingText && (
+            <p className="mt-1 text-xs text-slate-400">{supportingText}</p>
+          )}
         </div>
 
-        <div className={`${styles.text} text-5xl`}>
-          {icon}
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${styles.iconBg}`}>
+          <span className={`text-lg ${styles.icon}`}>{icon}</span>
         </div>
-
       </div>
     </div>
   );

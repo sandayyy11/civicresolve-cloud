@@ -1,18 +1,16 @@
 function StatusBadge({ status }) {
-  let styles = "bg-gray-100 text-gray-700";
+  let styles = "badge-neutral";
 
   if (status === "Pending") {
-    styles = "bg-yellow-100 text-yellow-800";
+    styles = "badge-pending";
   } else if (status === "In Progress") {
-    styles = "bg-blue-100 text-blue-800";
+    styles = "badge-progress";
   } else if (status === "Resolved") {
-    styles = "bg-green-100 text-green-800";
+    styles = "badge-resolved";
   }
 
   return (
-    <span
-      className={`px-3 py-1 rounded-full text-sm font-semibold ${styles}`}
-    >
+    <span className={styles}>
       {status}
     </span>
   );

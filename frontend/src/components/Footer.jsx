@@ -1,27 +1,25 @@
 function Footer() {
   return (
-    <footer className="bg-slate-900 text-white py-12">
-      <div className="max-w-6xl mx-auto px-6">
-
-        <div className="grid md:grid-cols-3 gap-10">
-
+    <footer className="bg-gray-900 py-12 text-white">
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="grid gap-10 md:grid-cols-3">
           <div>
-            <h2 className="text-2xl font-bold">
+            <h2 className="text-lg font-semibold">
               CivicResolve
             </h2>
 
-            <p className="mt-4 text-gray-400">
+            <p className="mt-3 text-sm leading-relaxed text-gray-400">
               AI-powered civic issue reporting platform that helps citizens
               report and track municipal problems efficiently.
             </p>
           </div>
 
           <div>
-            <h3 className="text-xl font-semibold mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-300">
               Quick Links
             </h3>
 
-            <ul className="space-y-2 text-gray-400">
+            <ul className="mt-4 space-y-2 text-sm text-gray-400">
               <li>Home</li>
               <li>About</li>
               <li>Report Issue</li>
@@ -30,24 +28,22 @@ function Footer() {
           </div>
 
           <div>
-            <h3 className="text-xl font-semibold mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-300">
               Built With
             </h3>
 
-            <ul className="space-y-2 text-gray-400">
+            <ul className="mt-4 space-y-2 text-sm text-gray-400">
               <li>React</li>
               <li>Tailwind CSS</li>
               <li>AWS Cloud</li>
               <li>AI Integration</li>
             </ul>
           </div>
-
         </div>
 
-        <div className="border-t border-gray-700 mt-10 pt-6 text-center text-gray-500">
+        <div className="mt-10 border-t border-gray-700 pt-6 text-center text-sm text-gray-500">
           © 2026 CivicResolve. All Rights Reserved.
         </div>
-
       </div>
     </footer>
   );

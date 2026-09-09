@@ -93,157 +93,151 @@ function AllIssues() {
 
   return (
     <DashboardLayout>
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">All Issues</h1>
-          <p className="mt-2 text-gray-500">
-            View, search, and filter all reported civic complaints.
-          </p>
+      <div className="mb-6">
+        <h1 className="page-title">All Issues</h1>
+        <p className="page-subtitle">View, search, and filter all reported civic complaints.</p>
+      </div>
+
+      <section className="card p-5 sm:p-6">
+        <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Complaints</h2>
+            <p className="mt-0.5 text-sm text-gray-500">
+              {isLoading
+                ? "Loading complaints..."
+                : `${totalIssues} complaint${totalIssues === 1 ? "" : "s"} found`}
+            </p>
+          </div>
         </div>
 
-        <section className="rounded-2xl bg-white p-5 shadow-md sm:p-7">
-          <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800">Complaints</h2>
-              <p className="mt-1 text-sm text-gray-500">
-                {isLoading
-                  ? "Loading complaints..."
-                  : `${totalIssues} complaint${totalIssues === 1 ? "" : "s"} found`}
-              </p>
-            </div>
+        <form onSubmit={applyFilters} className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-4">
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search by title"
+            className="input"
+          />
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            className="input"
+          >
+            <option value="">All statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Resolved">Resolved</option>
+          </select>
+          <select
+            value={categoryFilter}
+            onChange={(event) => setCategoryFilter(event.target.value)}
+            className="input"
+          >
+            <option value="">All categories</option>
+            {categories.map((category) => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              className="btn-primary flex-1"
+            >
+              <FaSearch /> Search
+            </button>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="btn-secondary"
+            >
+              Clear
+            </button>
           </div>
+        </form>
 
-          <form onSubmit={applyFilters} className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-4">
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by title"
-              className="rounded-xl border border-gray-300 px-4 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            />
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
-              className="rounded-xl border border-gray-300 px-4 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            >
-              <option value="">All statuses</option>
-              <option value="Pending">Pending</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Resolved">Resolved</option>
-            </select>
-            <select
-              value={categoryFilter}
-              onChange={(event) => setCategoryFilter(event.target.value)}
-              className="rounded-xl border border-gray-300 px-4 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            >
-              <option value="">All categories</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-            <div className="flex gap-2">
+        {error ? (
+          <p className="rounded-md bg-red-50 px-4 py-5 text-center text-sm text-red-600">{error}</p>
+        ) : isLoading ? (
+          <p className="py-10 text-center text-gray-500">Loading complaints...</p>
+        ) : issues.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-14 text-center">
+            <FaClipboardList className="mb-3 text-4xl text-gray-300" />
+            <p className="text-gray-500">No complaints match the current filters.</p>
+          </div>
+        ) : (
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Complaint</th>
+                  <th>Category</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                  <th>Reported by</th>
+                  <th>Assigned worker</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {issues.map((issue) => (
+                  <tr key={issue._id}>
+                    <td className="font-medium text-gray-900">{issue.title}</td>
+                    <td>{issue.category || "N/A"}</td>
+                    <td><PriorityBadge priority={issue.priority} /></td>
+                    <td><StatusBadge status={issue.status} /></td>
+                    <td>
+                      <p>{issue.reportedBy?.name || "Unknown citizen"}</p>
+                      {issue.reportedBy?.email && (
+                        <p className="text-xs text-gray-400">{issue.reportedBy.email}</p>
+                      )}
+                    </td>
+                    <td>
+                      {issue.assignedTo ? (
+                        <>
+                          <p>{issue.assignedTo.name}</p>
+                          <p className="text-xs text-gray-400">
+                            {issue.assignedTo.specialization || "General"}
+                          </p>
+                        </>
+                      ) : (
+                        <span className="badge-neutral">Unassigned</span>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap">
+                      {formatDate(issue.createdAt)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {!isLoading && !error && totalPages > 1 && (
+          <div className="mt-5 flex flex-col items-center justify-between gap-3 border-t border-gray-100 pt-5 sm:flex-row">
+            <p className="text-sm text-gray-500">
+              Page {page} of {totalPages}
+            </p>
+            <div className="flex items-center gap-2">
               <button
-                type="submit"
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 font-medium text-white transition hover:bg-blue-700"
+                type="button"
+                onClick={() => goToPage(page - 1)}
+                disabled={page <= 1}
+                className="btn-secondary"
               >
-                <FaSearch /> Search
+                <FaChevronLeft /> Previous
               </button>
               <button
                 type="button"
-                onClick={clearFilters}
-                className="rounded-xl border border-gray-300 px-4 py-2.5 font-medium text-gray-600 transition hover:bg-gray-50"
+                onClick={() => goToPage(page + 1)}
+                disabled={page >= totalPages}
+                className="btn-secondary"
               >
-                Clear
+                Next <FaChevronRight />
               </button>
             </div>
-          </form>
-
-          {error ? (
-            <p className="rounded-xl bg-red-50 px-4 py-5 text-center text-sm text-red-600">{error}</p>
-          ) : isLoading ? (
-            <p className="py-10 text-center text-gray-500">Loading complaints...</p>
-          ) : issues.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-14 text-center">
-              <FaClipboardList className="mb-3 text-4xl text-gray-300" />
-              <p className="text-gray-500">No complaints match the current filters.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
-                  <tr>
-                    <th className="px-3 py-3 font-semibold">Complaint</th>
-                    <th className="px-3 py-3 font-semibold">Category</th>
-                    <th className="px-3 py-3 font-semibold">Priority</th>
-                    <th className="px-3 py-3 font-semibold">Status</th>
-                    <th className="px-3 py-3 font-semibold">Reported by</th>
-                    <th className="px-3 py-3 font-semibold">Assigned worker</th>
-                    <th className="px-3 py-3 font-semibold">Created</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {issues.map((issue) => (
-                    <tr key={issue._id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                      <td className="px-3 py-4 font-medium text-gray-800">{issue.title}</td>
-                      <td className="px-3 py-4 text-gray-600">{issue.category || "N/A"}</td>
-                      <td className="px-3 py-4"><PriorityBadge priority={issue.priority} /></td>
-                      <td className="px-3 py-4"><StatusBadge status={issue.status} /></td>
-                      <td className="px-3 py-4 text-gray-600">
-                        <p>{issue.reportedBy?.name || "Unknown citizen"}</p>
-                        {issue.reportedBy?.email && (
-                          <p className="text-xs text-gray-400">{issue.reportedBy.email}</p>
-                        )}
-                      </td>
-                      <td className="px-3 py-4 text-gray-600">
-                        {issue.assignedTo ? (
-                          <>
-                            <p>{issue.assignedTo.name}</p>
-                            <p className="text-xs text-gray-400">
-                              {issue.assignedTo.specialization || "General"}
-                            </p>
-                          </>
-                        ) : (
-                          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
-                            Unassigned
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-3 py-4 whitespace-nowrap text-gray-600">
-                        {formatDate(issue.createdAt)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {!isLoading && !error && totalPages > 1 && (
-            <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-gray-100 pt-5 sm:flex-row">
-              <p className="text-sm text-gray-500">
-                Page {page} of {totalPages}
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => goToPage(page - 1)}
-                  disabled={page <= 1}
-                  className="inline-flex items-center gap-1 rounded-xl border border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <FaChevronLeft /> Previous
-                </button>
-                <button
-                  type="button"
-                  onClick={() => goToPage(page + 1)}
-                  disabled={page >= totalPages}
-                  className="inline-flex items-center gap-1 rounded-xl border border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Next <FaChevronRight />
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
-      </div>
+          </div>
+        )}
+      </section>
     </DashboardLayout>
   );
 }

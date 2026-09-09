@@ -1,3 +1,15 @@
+import { FaHeart, FaExclamationTriangle, FaMapMarkerAlt } from "react-icons/fa";
+
+function formatDistance(meters) {
+  if (!meters && meters !== 0) return "";
+
+  if (meters < 1000) {
+    return `${Math.round(meters)}m`;
+  }
+
+  return `${(meters / 1000).toFixed(1)}km`;
+}
+
 function DuplicateComplaintModal({
   isOpen,
   duplicates,
@@ -7,94 +19,111 @@ function DuplicateComplaintModal({
 }) {
   if (!isOpen) return null;
 
+  const hasHighConfidence = duplicates.some(
+    (d) => d.confidence === "high"
+  );
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4">
+      <div className="w-full max-w-xl rounded-lg bg-white shadow-xl">
+        <div className="border-b border-gray-200 px-6 py-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-amber-50 text-amber-600">
+              <FaExclamationTriangle size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Possible Duplicate Complaint
+              </h2>
+              <p className="mt-0.5 text-sm text-gray-500">
+                {hasHighConfidence
+                  ? "We found a very similar complaint near your location."
+                  : "We found a similar complaint near your location. You can still report yours if it is a different issue."}
+              </p>
+            </div>
+          </div>
+        </div>
 
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl p-8">
-
-        <h2 className="text-2xl font-bold mb-2">
-          ⚠️ Similar Complaint Found
-        </h2>
-
-        <p className="text-gray-500 mb-6">
-          We found complaints near your location.
-        </p>
-
-        <div className="space-y-5">
-
+        <div className="max-h-[60vh] space-y-4 overflow-y-auto px-6 py-5">
           {duplicates.map((issue) => (
-
             <div
-  key={issue._id}
-  className="border rounded-xl p-4 shadow-sm hover:shadow-md transition"
->
+              key={issue._id}
+              className="rounded-md border border-gray-200 p-4"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="font-semibold text-gray-900">
+                  {issue.title}
+                </h3>
 
-              <h3 className="font-bold text-lg">
-                {issue.title}
-              </h3>
-              <div className="flex gap-2 mt-2 flex-wrap">
+                {issue.confidence === "high" ? (
+                  <span className="badge-pending shrink-0">
+                    High match
+                  </span>
+                ) : (
+                  <span className="badge-neutral shrink-0">
+                    Possible match
+                  </span>
+                )}
+              </div>
 
-  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
-    {issue.category}
-  </span>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <span className="badge-neutral">{issue.category}</span>
+                <span className="badge-pending">{issue.status}</span>
 
-  <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">
-    {issue.status}
-  </span>
+                {issue.distanceMeters !== undefined && (
+                  <span className="badge-neutral flex items-center gap-1">
+                    <FaMapMarkerAlt size={12} />
+                    {formatDistance(issue.distanceMeters)} away
+                  </span>
+                )}
+              </div>
 
-</div>
-
-              <p className="text-gray-600 mt-2">
+              <p className="mt-2 text-sm text-gray-600">
                 {issue.summary}
               </p>
 
-              <div className="flex gap-5 mt-3">
-
-                <span>
-                  ❤️ {issue.supportCount} supporters
+              <div className="mt-3 flex gap-5 text-sm text-gray-500">
+                <span className="flex items-center gap-1.5">
+                  <FaHeart className="text-red-500" size={14} />
+                  {issue.supportCount} supporters
                 </span>
-
-                <span>
-                  {issue.category}
-                </span>
-
               </div>
-             {issue.imageUrl && (
-  <img
-    src={issue.imageUrl}
-    alt={issue.title}
-    className="rounded-xl mt-4 w-full h-48 object-cover"
-  />
-)}
+
+              {issue.imageUrl && (
+                <img
+                  src={issue.imageUrl}
+                  alt={issue.title}
+                  className="mt-3 w-full rounded-md border border-gray-200 object-cover"
+                />
+              )}
+
               <button
                 onClick={() => onSupport(issue._id)}
-                className="mt-4 w-full bg-pink-600 hover:bg-pink-700 text-white py-3 rounded-xl"
+                className="btn-primary mt-4 w-full"
               >
-                ❤️ Support Existing Complaint
+                <FaHeart />
+                Support Existing Complaint
               </button>
-
             </div>
-
           ))}
-
         </div>
 
-        <button
-          onClick={onReportAnyway}
-          className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl"
-        >
-          📤 Report Anyway
-        </button>
+        <div className="border-t border-gray-200 px-6 py-4">
+          <button
+            onClick={onReportAnyway}
+            className="btn-primary w-full"
+          >
+            Report Anyway
+          </button>
 
-        <button
-          onClick={onClose}
-          className="mt-3 w-full border py-3 rounded-xl"
-        >
-          Cancel
-        </button>
-
+          <button
+            onClick={onClose}
+            className="btn-secondary mt-2 w-full"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
-
     </div>
   );
 }
