@@ -106,7 +106,7 @@ function ComplaintMap() {
     try {
       // Fetch enough issues to accurately determine nearby complaints
       const response = await api.get("/issues", {
-        params: { limit: 1000 },
+        params: { limit: 100 },
       });
 
       console.log("Fetched Issues:", response.data.issues);
