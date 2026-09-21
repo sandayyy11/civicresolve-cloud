@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
+import L from "leaflet";
 import api from "../../services/api";
-import { markerIcons } from "../../utils/markerIcons";
 import { calculateDistance } from "../../utils/distance";
 
 import {
@@ -13,6 +13,15 @@ import {
 } from "react-leaflet";
 
 const NEARBY_RADIUS_METERS = 10000; // 10 km
+
+// Use an inline SVG so complaint markers do not depend on runtime PNG asset URLs.
+const complaintMarkerIcon = L.divIcon({
+  className: "complaint-marker-icon",
+  html: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42" aria-hidden="true"><path d="M16 1C7.72 1 1 7.72 1 16c0 10.5 15 25 15 25s15-14.5 15-25C31 7.72 24.28 1 16 1Z" fill="#2563eb" stroke="#ffffff" stroke-width="2"/><circle cx="16" cy="16" r="6" fill="#ffffff"/></svg>`,
+  iconSize: [32, 42],
+  iconAnchor: [16, 42],
+  popupAnchor: [0, -42],
+});
 
 // Safely parse coordinate values from either numbers or numeric strings
 function parseCoord(value) {
@@ -216,7 +225,7 @@ function ComplaintMap() {
               <Marker
                 key={issue._id}
                 position={[coords.latitude, coords.longitude]}
-                icon={markerIcons[issue.category] || markerIcons.Other}
+                icon={complaintMarkerIcon}
               >
                 <Popup>
                   <div className="w-64">
